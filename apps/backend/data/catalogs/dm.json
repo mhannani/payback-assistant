@@ -1,0 +1,348 @@
+[
+  {
+    "partner": "dm",
+    "brand": "Cien",
+    "name": "Antischuppen Shampoo",
+    "description": "Cien. Antischuppen Shampoo.",
+    "price_cents": 426,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/405/648/982/7184/front_en.3.400.jpg",
+    "attrs": {
+      "off_code": "4056489827184",
+      "search_term": "shampoo"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "pantene",
+    "name": "Repair&Care Shampoo",
+    "description": "pantene. Repair&Care Shampoo.",
+    "price_cents": 249,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/870/021/655/7870/front_de.4.400.jpg",
+    "attrs": {
+      "off_code": "8700216557870",
+      "search_term": "shampoo"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "Herbal",
+    "name": "Shampoo",
+    "description": "Herbal. Shampoo.",
+    "price_cents": 499,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/870/021/692/8823/front_de.3.400.jpg",
+    "attrs": {
+      "off_code": "8700216928823",
+      "search_term": "shampoo"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": null,
+    "name": "Head& Shoulder Citrus Fresh 600 ml",
+    "description": "Head& Shoulder Citrus Fresh 600 ml. Hair shampoo.",
+    "price_cents": 761,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/408/450/082/1507/front_en.3.400.jpg",
+    "attrs": {
+      "off_code": "4084500821507",
+      "search_term": "shampoo",
+      "category": "Hair shampoo"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "Cien",
+    "name": "Shampoo rosa groß",
+    "description": "Cien. Shampoo rosa groß. 1pcs.",
+    "price_cents": 144,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/405/648/982/6965/front_de.5.400.jpg",
+    "attrs": {
+      "off_code": "4056489826965",
+      "search_term": "shampoo",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "N.A.E.",
+    "name": "Festes Shampoo",
+    "description": "N.A.E.. Festes Shampoo. Open Beauty Facts. 1pcs.",
+    "price_cents": 169,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/401/510/032/8585/front_de.3.400.jpg",
+    "attrs": {
+      "off_code": "4015100328585",
+      "search_term": "shampoo",
+      "category": "Open Beauty Facts",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "Nevadent",
+    "name": "Zahnpasta 0-6",
+    "description": "Nevadent. Zahnpasta 0-6. 1pcs.",
+    "price_cents": 643,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/405/648/970/8513/front_de.3.400.jpg",
+    "attrs": {
+      "off_code": "4056489708513",
+      "search_term": "zahnpasta",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "todaydent",
+    "name": "todaydent Zahnpasta",
+    "description": "todaydent. todaydent Zahnpasta. 1pcs.",
+    "price_cents": 191,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/000/002/009/3181/front_fr.4.400.jpg",
+    "attrs": {
+      "off_code": "20093181",
+      "search_term": "zahnpasta",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "cien",
+    "name": "Duschgel Pure Frische",
+    "description": "cien. Duschgel Pure Frische. 1pcs.",
+    "price_cents": 469,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/405/648/982/6934/front_de.5.400.jpg",
+    "attrs": {
+      "off_code": "4056489826934",
+      "search_term": "duschgel",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "Alterra",
+    "name": "Duschgel",
+    "description": "Alterra. Duschgel. Vegan.",
+    "price_cents": 691,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/430/561/530/7220/front_de.5.400.jpg",
+    "attrs": {
+      "off_code": "4305615307220",
+      "search_term": "duschgel"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": null,
+    "name": "Duschgel Herren",
+    "description": "Duschgel Herren. 1pcs.",
+    "price_cents": 154,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/430/561/583/5754/front_de.4.400.jpg",
+    "attrs": {
+      "off_code": "4305615835754",
+      "search_term": "duschgel",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "fa",
+    "name": "Duschgel",
+    "description": "fa. Duschgel. Open Beauty Facts.",
+    "price_cents": 614,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/383/882/414/2173/front_de.4.400.jpg",
+    "attrs": {
+      "off_code": "3838824142173",
+      "search_term": "duschgel",
+      "category": "Open Beauty Facts"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": null,
+    "name": "Duschgel",
+    "description": "Duschgel. 1pcs.",
+    "price_cents": 314,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/872/018/133/3996/front_ar.8.400.jpg",
+    "attrs": {
+      "off_code": "8720181333996",
+      "search_term": "duschgel",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": null,
+    "name": "Duschgel Energy",
+    "description": "Duschgel Energy. 1pcs.",
+    "price_cents": 133,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/430/561/572/6274/front_de.3.400.jpg",
+    "attrs": {
+      "off_code": "4305615726274",
+      "search_term": "duschgel",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "Rossmann",
+    "name": "insana Duschgel Arganöl",
+    "description": "Rossmann. insana Duschgel Arganöl. 1pcs. Vegan.",
+    "price_cents": 183,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/430/561/598/1925/front_de.3.400.jpg",
+    "attrs": {
+      "off_code": "4305615981925",
+      "search_term": "duschgel",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "Alterra",
+    "name": "Handcreme Repair",
+    "description": "Alterra. Handcreme Repair. 1pcs. Vegan.",
+    "price_cents": 539,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/430/561/582/6912/front_de.4.400.jpg",
+    "attrs": {
+      "off_code": "4305615826912",
+      "search_term": "handcreme",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "Blüte  Zeit",
+    "name": "Öko  Windeln",
+    "description": "Blüte  Zeit. Öko  Windeln. 1pcs.",
+    "price_cents": 523,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/431/159/665/2495/front_de.3.400.jpg",
+    "attrs": {
+      "off_code": "4311596652495",
+      "search_term": "windeln",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "Babylove",
+    "name": "Premium Windeln Größe 3",
+    "description": "Babylove. Premium Windeln Größe 3. 46pcs.",
+    "price_cents": 166,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/406/644/724/8425/front_de.3.400.jpg",
+    "attrs": {
+      "off_code": "4066447248425",
+      "search_term": "windeln",
+      "quantity": "46pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "Pascal + Friends",
+    "name": "Windeln",
+    "description": "Pascal + Friends. Windeln. 31pcs.",
+    "price_cents": 341,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/580/479/726/1577/front_de.3.400.jpg",
+    "attrs": {
+      "off_code": "5804797261577",
+      "search_term": "windeln",
+      "quantity": "31pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "Balea",
+    "name": "Deo Roll On Extra Dry",
+    "description": "Balea. Deo Roll On Extra Dry.",
+    "price_cents": 187,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/406/644/775/0645/front_ro.3.400.jpg",
+    "attrs": {
+      "off_code": "4066447750645",
+      "search_term": "deo"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": null,
+    "name": "Deo Melody",
+    "description": "Deo Melody. 1pcs.",
+    "price_cents": 659,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/406/644/727/7562/front_de.3.400.jpg",
+    "attrs": {
+      "off_code": "4066447277562",
+      "search_term": "deo",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "Speick",
+    "name": "Speick Deo Stick grün",
+    "description": "Speick. Speick Deo Stick grün. 40ml. Vegan.",
+    "price_cents": 529,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/400/980/000/1602/front_de.4.400.jpg",
+    "attrs": {
+      "off_code": "4009800001602",
+      "search_term": "deo",
+      "quantity": "40ml"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": null,
+    "name": "Deo Men",
+    "description": "Deo Men. 1pcs.",
+    "price_cents": 155,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/406/644/756/5874/front_en.3.400.jpg",
+    "attrs": {
+      "off_code": "4066447565874",
+      "search_term": "deo",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": null,
+    "name": "Deo Roller Damen",
+    "description": "Deo Roller Damen. 1pcs.",
+    "price_cents": 674,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/404/561/200/7920/front_de.4.400.jpg",
+    "attrs": {
+      "off_code": "4045612007920",
+      "search_term": "deo",
+      "quantity": "1pcs"
+    }
+  },
+  {
+    "partner": "dm",
+    "brand": "Lacura",
+    "name": "Deo",
+    "description": "Lacura. Deo. 2pcs.",
+    "price_cents": 221,
+    "currency": "EUR",
+    "image_url": "https://images.openfoodfacts.org/images/products/406/146/177/0594/front_de.3.400.jpg",
+    "attrs": {
+      "off_code": "4061461770594",
+      "search_term": "deo",
+      "quantity": "2pcs"
+    }
+  }
+]

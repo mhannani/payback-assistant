@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS products (
     description VARCHAR(1024),
     price_cents INTEGER NOT NULL,
     currency    VARCHAR(3) NOT NULL DEFAULT 'EUR',
+    image_url   VARCHAR(1024),
     attrs       JSONB NOT NULL DEFAULT '{}'::jsonb,
     embedding   VECTOR(384),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),

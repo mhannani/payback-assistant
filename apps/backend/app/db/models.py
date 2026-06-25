@@ -103,6 +103,10 @@ class Product(Base):
     price_cents: Mapped[int] = mapped_column(Integer)
     currency: Mapped[str] = mapped_column(String(3), default="EUR")
 
+    # Product image (referenced by URL, not stored). Populated from the source
+    # catalog; surfaced by the assistant so a client can render product photos.
+    image_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+
 
     # Partner-specific fields that don't fit the shared columns.
     attrs: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
