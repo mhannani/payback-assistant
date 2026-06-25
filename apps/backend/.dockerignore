@@ -6,6 +6,5 @@ __pycache__/
 .mypy_cache/
 .git/
 .gitignore
-tests/
 .env
 .env.*

@@ -103,6 +103,7 @@ class Product(Base):
     price_cents: Mapped[int] = mapped_column(Integer)
     currency: Mapped[str] = mapped_column(String(3), default="EUR")
 
+
     # Partner-specific fields that don't fit the shared columns.
     attrs: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
 

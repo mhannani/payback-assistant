@@ -8,6 +8,28 @@ response containing either a ranked list of recommended products or a clarifying
 
 > Status: early work in progress.
 
+## Repository layout
+
+```
+apps/
+  backend/    FastAPI service, catalog data pipeline, database layer, tests
+  frontend/   web UI (additional, developed on a separate branch)
+docker-compose.dev.yml   dev stack (API + Postgres/pgvector)
+Makefile                 developer workflow (everything runs through Docker)
+```
+
+## Quick start
+
+Requires Docker. From the repository root:
+
+```bash
+make up      # build and start the API + database
+make seed    # load the partner catalogs into the database
+make test    # run the test suite
+```
+
+`make help` lists all targets.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

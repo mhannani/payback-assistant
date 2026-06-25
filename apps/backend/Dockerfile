@@ -27,6 +27,7 @@ COPY --from=builder /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
 COPY app/ ./app/
+COPY data/ ./data/
 
 USER app
 EXPOSE 8000
