@@ -57,6 +57,9 @@ async def seed() -> int:
                     price_cents=rec["price_cents"],
                     currency=rec["currency"],
                     image_url=rec["image_url"],
+                    tags=rec["tags"],
+                    weight_g=rec["weight_g"],
+                    volume_ml=rec["volume_ml"],
                     attrs=rec["attrs"],
                 )
             )

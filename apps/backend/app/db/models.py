@@ -25,7 +25,7 @@ from sqlalchemy import (
     String,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 # Embedding dimensionality. Kept in sync with Settings.embedding_dim; declared
@@ -76,16 +76,18 @@ class Brand(Base):
 class Product(Base):
     """A single catalog item.
 
-    Shared columns drive cross-partner search and ranking; ``attrs`` holds the
-    partner-specific shape (e.g. dm: size_ml/category; EDEKA: unit/bio; Amazon:
-    asin/category_path). ``embedding`` is the semantic vector; ``search_tsv`` is
-    a generated full-text column (declared in init.sql) used for keyword search.
+    Shared columns drive cross-partner search and ranking. ``tags`` (organic, vegan…)
+    and the normalized ``weight_g``/``volume_ml`` are extracted at ingestion so they are
+    directly filterable/rankable without runtime parsing; rare partner-specific extras
+    (source id, rating, category) live in ``attrs``. ``embedding`` is the semantic vector;
+    ``search_tsv`` is a generated full-text column (declared in init.sql) for keyword search.
     """
 
     __tablename__ = "products"
     __table_args__ = (
         Index("ix_products_partner", "partner_id"),
         Index("ix_products_brand", "brand_id"),
+        Index("ix_products_tags_gin", "tags", postgresql_using="gin"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -107,8 +109,16 @@ class Product(Base):
     # catalog; surfaced by the assistant so a client can render product photos.
     image_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
+    # Canonical dietary/label tags (e.g. 'organic', 'vegan'), GIN-indexed so the
+    # agent can filter on an attribute with `WHERE 'organic' = ANY(tags)`.
+    tags: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
 
-    # Partner-specific fields that don't fit the shared columns.
+    # Size normalized to base units at ingestion (one of these is set when the
+    # source carries a parseable quantity), enabling price-per-unit ranking.
+    weight_g: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    volume_ml: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Rare partner-specific extras that aren't filtered/ranked on (source id, rating…).
     attrs: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
 
     # Semantic embedding of name + description (set at seed time).

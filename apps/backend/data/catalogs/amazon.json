@@ -1,102 +1,102 @@
 [
   {
-    "partner": "amazon",
+    "product_name": "Anker Soundcore Bluetooth Kopfhörer / wireless headphones",
     "brand": "Anker",
-    "name": "Anker Soundcore Bluetooth Kopfhörer / wireless headphones",
-    "description": "Over-ear Bluetooth headphones with active noise cancelling and 40h battery.",
-    "price_cents": 3999,
-    "currency": "EUR",
-    "image_url": "https://picsum.photos/seed/amazon-headphones/400/400",
-    "attrs": {"asin": "B08HMWZBXC", "category_path": "Electronics > Audio > Headphones"}
+    "asin": "B08HMWZBXC",
+    "rating": 4.5,
+    "list_price": 39.99,
+    "category_path": "Electronics > Audio > Headphones",
+    "image": "https://picsum.photos/seed/amazon-headphones/400/400",
+    "blurb": "Over-ear Bluetooth headphones with active noise cancelling and 40h battery."
   },
   {
-    "partner": "amazon",
+    "product_name": "JBL Go 3 tragbarer Lautsprecher / portable speaker",
     "brand": "JBL",
-    "name": "JBL Go 3 tragbarer Lautsprecher / portable speaker",
-    "description": "Compact waterproof Bluetooth speaker, JBL Pro Sound, 5h playtime.",
-    "price_cents": 2999,
-    "currency": "EUR",
-    "image_url": "https://picsum.photos/seed/amazon-speaker/400/400",
-    "attrs": {"asin": "B08X4M9V2K", "category_path": "Electronics > Audio > Speakers"}
+    "asin": "B08X4M9V2K",
+    "rating": 4.7,
+    "list_price": 29.99,
+    "category_path": "Electronics > Audio > Speakers",
+    "image": "https://picsum.photos/seed/amazon-speaker/400/400",
+    "blurb": "Compact waterproof Bluetooth speaker, JBL Pro Sound, 5h playtime."
   },
   {
-    "partner": "amazon",
+    "product_name": "Logitech MX Keys kabellose Tastatur / wireless keyboard",
     "brand": "Logitech",
-    "name": "Logitech MX Keys kabellose Tastatur / wireless keyboard",
-    "description": "Backlit wireless keyboard with USB-C charging and multi-device pairing.",
-    "price_cents": 9999,
-    "currency": "EUR",
-    "image_url": "https://picsum.photos/seed/amazon-keyboard/400/400",
-    "attrs": {"asin": "B07W6JN8YZ", "category_path": "Electronics > Computers > Keyboards"}
+    "asin": "B07W6JN8YZ",
+    "rating": 4.8,
+    "list_price": 99.99,
+    "category_path": "Electronics > Computers > Keyboards",
+    "image": "https://picsum.photos/seed/amazon-keyboard/400/400",
+    "blurb": "Backlit wireless keyboard with USB-C charging and multi-device pairing."
   },
   {
-    "partner": "amazon",
+    "product_name": "Tefal Bratpfanne 28cm / non-stick frying pan",
     "brand": "Tefal",
-    "name": "Tefal Bratpfanne 28cm / non-stick frying pan",
-    "description": "28cm non-stick frying pan with Thermo-Spot heat indicator, induction-ready.",
-    "price_cents": 2495,
-    "currency": "EUR",
-    "image_url": "https://picsum.photos/seed/amazon-pan/400/400",
-    "attrs": {"asin": "B07QK9R8YT", "category_path": "Home > Kitchen > Cookware"}
+    "asin": "B07QK9R8YT",
+    "rating": 4.4,
+    "list_price": 24.95,
+    "category_path": "Home > Kitchen > Cookware",
+    "image": "https://picsum.photos/seed/amazon-pan/400/400",
+    "blurb": "28cm non-stick frying pan with Thermo-Spot heat indicator, induction-ready."
   },
   {
-    "partner": "amazon",
+    "product_name": "Rutschfeste Yogamatte / non-slip yoga mat",
     "brand": null,
-    "name": "Rutschfeste Yogamatte / non-slip yoga mat",
-    "description": "Eco-friendly TPE yoga mat, 6mm thick, with carrying strap.",
-    "price_cents": 1999,
-    "currency": "EUR",
-    "image_url": "https://picsum.photos/seed/amazon-yogamat/400/400",
-    "attrs": {"asin": "B09MNP4WXR", "category_path": "Sports > Fitness > Mats"}
+    "asin": "B09MNP4WXR",
+    "rating": 4.3,
+    "list_price": 19.99,
+    "category_path": "Sports > Fitness > Mats",
+    "image": "https://picsum.photos/seed/amazon-yogamat/400/400",
+    "blurb": "Eco-friendly TPE yoga mat, 6mm thick, with carrying strap."
   },
   {
-    "partner": "amazon",
+    "product_name": "Edelstahl Trinkflasche 750ml / insulated water bottle",
     "brand": null,
-    "name": "Edelstahl Trinkflasche 750ml / insulated water bottle",
-    "description": "Vacuum-insulated stainless steel bottle, keeps drinks cold 24h / hot 12h.",
-    "price_cents": 1549,
-    "currency": "EUR",
-    "image_url": "https://picsum.photos/seed/amazon-bottle/400/400",
-    "attrs": {"asin": "B08LMVN3QP", "category_path": "Home > Kitchen > Drinkware"}
+    "asin": "B08LMVN3QP",
+    "rating": 4.6,
+    "list_price": 15.49,
+    "category_path": "Home > Kitchen > Drinkware",
+    "image": "https://picsum.photos/seed/amazon-bottle/400/400",
+    "blurb": "Vacuum-insulated stainless steel bottle, keeps drinks cold 24h / hot 12h."
   },
   {
-    "partner": "amazon",
+    "product_name": "Philips LED Schreibtischlampe / dimmable desk lamp",
     "brand": "Philips",
-    "name": "Philips LED Schreibtischlampe / dimmable desk lamp",
-    "description": "Dimmable LED desk lamp with adjustable colour temperature and USB port.",
-    "price_cents": 3490,
-    "currency": "EUR",
-    "image_url": "https://picsum.photos/seed/amazon-lamp/400/400",
-    "attrs": {"asin": "B07GHK2L9M", "category_path": "Home > Lighting > Lamps"}
+    "asin": "B07GHK2L9M",
+    "rating": 4.5,
+    "list_price": 34.90,
+    "category_path": "Home > Lighting > Lamps",
+    "image": "https://picsum.photos/seed/amazon-lamp/400/400",
+    "blurb": "Dimmable LED desk lamp with adjustable colour temperature and USB port."
   },
   {
-    "partner": "amazon",
+    "product_name": "Reise-Rucksack 35L / travel backpack",
     "brand": null,
-    "name": "Reise-Rucksack 35L / travel backpack",
-    "description": "Water-resistant 35L travel backpack with laptop compartment and USB pass-through.",
-    "price_cents": 4599,
-    "currency": "EUR",
-    "image_url": "https://picsum.photos/seed/amazon-backpack/400/400",
-    "attrs": {"asin": "B08T7QC4RF", "category_path": "Luggage > Backpacks"}
+    "asin": "B08T7QC4RF",
+    "rating": 4.2,
+    "list_price": 45.99,
+    "category_path": "Luggage > Backpacks",
+    "image": "https://picsum.photos/seed/amazon-backpack/400/400",
+    "blurb": "Water-resistant 35L travel backpack with laptop compartment and USB pass-through."
   },
   {
-    "partner": "amazon",
+    "product_name": "Brita Wasserfilter Tischkanne / water filter jug",
     "brand": "Brita",
-    "name": "Brita Wasserfilter Tischkanne / water filter jug",
-    "description": "2.4L water filter jug with one MAXTRA+ cartridge, reduces limescale.",
-    "price_cents": 2299,
-    "currency": "EUR",
-    "image_url": "https://picsum.photos/seed/amazon-waterfilter/400/400",
-    "attrs": {"asin": "B00004S1D6", "category_path": "Home > Kitchen > Water Filters"}
+    "asin": "B00004S1D6",
+    "rating": 4.6,
+    "list_price": 22.99,
+    "category_path": "Home > Kitchen > Water Filters",
+    "image": "https://picsum.photos/seed/amazon-waterfilter/400/400",
+    "blurb": "2.4L water filter jug with one MAXTRA+ cartridge, reduces limescale."
   },
   {
-    "partner": "amazon",
+    "product_name": "USB-C Ladekabel 2m (2er-Pack) / charging cable",
     "brand": null,
-    "name": "USB-C Ladekabel 2m (2er-Pack) / charging cable",
-    "description": "Two-pack of 2m braided USB-C to USB-C fast-charging cables, 100W.",
-    "price_cents": 1299,
-    "currency": "EUR",
-    "image_url": "https://picsum.photos/seed/amazon-cable/400/400",
-    "attrs": {"asin": "B09BNYKD7X", "category_path": "Electronics > Accessories > Cables"}
+    "asin": "B09BNYKD7X",
+    "rating": 4.4,
+    "list_price": 12.99,
+    "category_path": "Electronics > Accessories > Cables",
+    "image": "https://picsum.photos/seed/amazon-cable/400/400",
+    "blurb": "Two-pack of 2m braided USB-C to USB-C fast-charging cables, 100W."
   }
 ]

@@ -16,6 +16,7 @@ def test_records_have_required_fields() -> None:
         assert r["name"]
         assert r["price_cents"] > 0
         assert r["currency"] == "EUR"
+        assert isinstance(r["tags"], list)
         # Image is optional but, when present, must be a URL.
         if r["image_url"]:
             assert r["image_url"].startswith("http")
@@ -23,5 +24,5 @@ def test_records_have_required_fields() -> None:
 
 def test_amazon_catalog_is_long_tail_merchandise() -> None:
     amazon = load_catalog(PartnerSlug.AMAZON)
-    # Each curated Amazon item carries its ASIN + a category path.
-    assert all({"asin", "category_path"} <= r["attrs"].keys() for r in amazon)
+    # Each curated Amazon item keeps its ASIN (as source_id) + a category path.
+    assert all({"source_id", "category_path"} <= r["attrs"].keys() for r in amazon)

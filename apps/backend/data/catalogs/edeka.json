@@ -1,959 +1,1421 @@
 [
   {
-    "partner": "edeka",
-    "brand": "Cirio",
+    "name": "Penne Rigate Integrale",
+    "hersteller": "Barilla",
+    "weight": "500g",
+    "price": "12,30",
+    "kategorie": "Dried wholemeal pasta",
+    "img": "https://images.openfoodfacts.org/images/products/807/680/952/9433/front_en.451.400.jpg",
+    "ean": "8076809529433",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:Végétarien"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Spaghetti Nr. 5 Integrali",
+    "hersteller": "Barilla",
+    "weight": "500 g",
+    "price": "12,48",
+    "kategorie": "Dry durum wheat pasta",
+    "img": "https://images.openfoodfacts.org/images/products/807/680/952/9419/front_fr.1666.400.jpg",
+    "ean": "8076809529419",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:source-of-fibre",
+      "en:vegan",
+      "en:green-dot"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Spaghetti au Quinoa Persil Ail",
+    "hersteller": "Jardin Bio",
+    "weight": "500 g",
+    "price": "8,61",
+    "kategorie": "Dry pastas",
+    "img": "https://images.openfoodfacts.org/images/products/347/882/060/0651/front_fr.75.400.jpg",
+    "ean": "3478820600651",
+    "labels_tags": [
+      "en:organic",
+      "en:eu-organic",
+      "en:no-artificial-flavors",
+      "en:non-eu-agriculture",
+      "en:1-for-the-planet",
+      "en:eu-agriculture",
+      "en:eu-non-eu-agriculture",
+      "en:fr-bio-01",
+      "en:green-dot",
+      "en:made-in-france",
+      "en:no-colorings",
+      "en:nutriscore",
+      "en:nutriscore-grade-a",
+      "fr:ab-agriculture-biologique",
+      "en:Eco-emballages"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Spaghetti N° 5",
+    "hersteller": "Barilla",
+    "weight": "1 kg",
+    "price": "1,50",
+    "kategorie": "Dry durum wheat pasta",
+    "img": "https://images.openfoodfacts.org/images/products/807/680/010/5056/front_fr.1320.400.jpg",
+    "ean": "8076800105056",
+    "labels_tags": [
+      "en:vegetarian"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Linguine No. 13",
+    "hersteller": "Barilla",
+    "weight": "500 g",
+    "price": "5,01",
+    "kategorie": "Spaghetti",
+    "img": "https://images.openfoodfacts.org/images/products/807/680/952/3509/front_fr.259.400.jpg",
+    "ean": "8076809523509",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:green-dot",
+      "fr:triman",
+      "fr:Importé d'Italie"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Spaghetti au Quinoa Tomate",
+    "hersteller": "Jardin Bio étic",
+    "weight": "500 g",
+    "price": "1,44",
+    "kategorie": "Durum wheat spaghetti",
+    "img": "https://images.openfoodfacts.org/images/products/347/882/004/3625/front_fr.88.400.jpg",
+    "ean": "3478820043625",
+    "labels_tags": [
+      "en:organic",
+      "en:eu-organic",
+      "en:no-artificial-flavors",
+      "en:non-eu-agriculture",
+      "en:1-for-the-planet",
+      "en:eu-agriculture",
+      "en:eu-non-eu-agriculture",
+      "en:fr-bio-01",
+      "en:green-dot",
+      "en:made-in-france",
+      "en:no-colorings",
+      "en:nutriscore",
+      "en:nutriscore-grade-a",
+      "fr:ab-agriculture-biologique"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Bio-Organic Vollkorn-Spaghetti",
+    "hersteller": "Combino",
+    "weight": "500g",
+    "price": "11,89",
+    "kategorie": "Noodles",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/099/5744/front_fr.88.400.jpg",
+    "ean": "20995744",
+    "labels_tags": [
+      "en:organic",
+      "en:eu-organic",
+      "de:eg-öko-verordnung",
+      "fr:ab-agriculture-biologique",
+      "fr:triman"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Spaghettnii No. 3",
+    "hersteller": "166",
+    "weight": "500 g",
+    "price": "3,21",
+    "kategorie": "Dry durum wheat pasta",
+    "img": "https://images.openfoodfacts.org/images/products/807/680/019/5033/front_en.158.400.jpg",
+    "ean": "8076800195033",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:halal",
+      "en:made-in-italy"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Linguine",
+    "hersteller": "Barilla",
+    "weight": "500 g",
+    "price": "6,42",
+    "kategorie": "Dried wholemeal pasta",
+    "img": "https://images.openfoodfacts.org/images/products/807/680/957/8363/front_fr.106.400.jpg",
+    "ean": "8076809578363",
+    "labels_tags": [
+      "en:vegetarian",
+      "fr:triman"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Barilla Capellini N°1",
+    "hersteller": "Barilla",
+    "weight": "500 g",
+    "price": "9,07",
+    "kategorie": "Spaghetti",
+    "img": "https://images.openfoodfacts.org/images/products/807/680/019/5019/front_en.2385.400.jpg",
+    "ean": "8076800195019",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:halal",
+      "en:kosher",
+      "en:green-dot",
+      "de:Recyclebare Verpackung",
+      "fr:n-1-in-italia",
+      "it:Kascher",
+      "it:Végétarien"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Spaghettoni n.7 Nudeln",
+    "hersteller": "Barilla",
+    "weight": "500 g",
+    "price": "3,44",
+    "kategorie": "Spaghetti",
+    "img": "https://images.openfoodfacts.org/images/products/807/680/815/0072/front_fr.365.400.jpg",
+    "ean": "8076808150072",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:halal",
+      "fr:Carton-100-recyclable",
+      "fr:N-1-in-italia"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Panzani Spaghetti",
+    "hersteller": "Ebro Foods",
+    "weight": "500 g",
+    "price": "11,56",
+    "kategorie": "Dry durum wheat pasta",
+    "img": "https://images.openfoodfacts.org/images/products/303/835/001/5006/front_fr.172.400.jpg",
+    "ean": "3038350015006",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:nutriscore",
+      "en:nutriscore-grade-a",
+      "fr:ble-francais",
+      "fr:triman",
+      "fr:Qualite-or"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Bio Vollkorn Penne Rigante",
+    "hersteller": "Naturgut Penny",
+    "weight": "1l",
+    "price": "2,90",
+    "kategorie": "Noodles",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/068/1937/front_en.117.400.jpg",
+    "ean": "20681937",
+    "labels_tags": [
+      "en:french-milk",
+      "en:fsc",
+      "en:fsc-mix",
+      "en:nutriscore",
+      "en:nutriscore-grade-a",
+      "fr:triman"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Spaghetti grossi - No. 5",
+    "hersteller": "Rummo",
+    "weight": "500g",
+    "price": "12,18",
+    "kategorie": "Dry pastas",
+    "img": "https://images.openfoodfacts.org/images/products/800/834/320/0059/front_it.39.400.jpg",
+    "ean": "8008343200059",
+    "labels_tags": [
+      "en:certified-by-veritas",
+      "en:eac",
+      "en:green-dot",
+      "fr:KF"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
+    "name": "Spaghetti Protein+",
+    "hersteller": "Barilla",
+    "weight": "400 g",
+    "price": "6,80",
+    "kategorie": "Dry pastas",
+    "img": "https://images.openfoodfacts.org/images/products/807/680/958/5880/front_en.51.400.jpg",
+    "ean": "8076809585880",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:source-of-proteins",
+      "en:high-proteins",
+      "fr:triman"
+    ],
+    "suchwort": "spaghetti"
+  },
+  {
     "name": "Passata Verace (Passierte Tomaten)",
-    "description": "Cirio. Passata Verace (Passierte Tomaten). Mashed vegetables. 700 g. Green Dot, Nutriscore Grade A, Veganok, fr:Autentico italiano.",
-    "price_cents": 506,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/800/032/001/0095/front_en.100.400.jpg",
-    "attrs": {
-      "off_code": "8000320010095",
-      "search_term": "tomaten passata",
-      "category": "Mashed vegetables",
-      "quantity": "700 g",
-      "bio": false
-    }
+    "hersteller": "Cirio",
+    "weight": "700 g",
+    "price": "11,96",
+    "kategorie": "Mashed vegetables",
+    "img": "https://images.openfoodfacts.org/images/products/800/032/001/0095/front_en.100.400.jpg",
+    "ean": "8000320010095",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:vegan",
+      "en:green-dot",
+      "en:nutriscore",
+      "en:nutriscore-grade-a",
+      "en:veganok",
+      "fr:Autentico italiano"
+    ],
+    "suchwort": "tomaten passata"
   },
   {
-    "partner": "edeka",
-    "brand": "Edeka Bio",
     "name": "Passata, passierte Tomaten - Bio",
-    "description": "Edeka Bio. Passata, passierte Tomaten - Bio. fein passierte Tomaten. Tomato sauces. 690g. EG-Öko-Verordnung, IT-BIO-007, IT-BIO-009, Nutriscore Grade A, de:Italien-Landwirtschaft, de:WWF.",
-    "price_cents": 1340,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/431/150/165/0578/front_de.74.400.jpg",
-    "attrs": {
-      "off_code": "4311501650578",
-      "search_term": "tomaten passata",
-      "category": "Tomato sauces",
-      "quantity": "690g",
-      "bio": true
-    }
+    "hersteller": "Edeka Bio",
+    "weight": "690g",
+    "price": "14,45",
+    "kategorie": "Tomato sauces",
+    "img": "https://images.openfoodfacts.org/images/products/431/150/165/0578/front_de.74.400.jpg",
+    "ean": "4311501650578",
+    "labels_tags": [
+      "en:organic",
+      "en:eu-organic",
+      "de:eg-öko-verordnung",
+      "en:it-bio-007",
+      "en:it-bio-009",
+      "en:nutriscore",
+      "en:nutriscore-grade-a",
+      "de:Italien-Landwirtschaft",
+      "de:WWF"
+    ],
+    "suchwort": "tomaten passata"
   },
   {
-    "partner": "edeka",
-    "brand": "Mutti",
     "name": "Passata Toskana",
-    "description": "Mutti. Passata Toskana. Mashed vegetables. 400 g - 388 ml.",
-    "price_cents": 1333,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/800/511/000/2083/front_en.29.400.jpg",
-    "attrs": {
-      "off_code": "8005110002083",
-      "search_term": "tomaten passata",
-      "category": "Mashed vegetables",
-      "quantity": "400 g - 388 ml",
-      "bio": false
-    }
+    "hersteller": "Mutti",
+    "weight": "400 g - 388 ml",
+    "price": "4,19",
+    "kategorie": "Mashed vegetables",
+    "img": "https://images.openfoodfacts.org/images/products/800/511/000/2083/front_en.29.400.jpg",
+    "ean": "8005110002083",
+    "labels_tags": [],
+    "suchwort": "tomaten passata"
   },
   {
-    "partner": "edeka",
-    "brand": "Mutti",
     "name": "Passata di Puglia Passierte Tomaten",
-    "description": "Mutti. Passata di Puglia Passierte Tomaten. Tomato sauces.",
-    "price_cents": 1242,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/800/511/000/1901/front_de.3.400.jpg",
-    "attrs": {
-      "off_code": "8005110001901",
-      "search_term": "tomaten passata",
-      "category": "Tomato sauces",
-      "bio": false
-    }
+    "hersteller": "Mutti",
+    "weight": null,
+    "price": "2,60",
+    "kategorie": "Tomato sauces",
+    "img": "https://images.openfoodfacts.org/images/products/800/511/000/1901/front_de.3.400.jpg",
+    "ean": "8005110001901",
+    "labels_tags": [],
+    "suchwort": "tomaten passata"
   },
   {
-    "partner": "edeka",
-    "brand": "King's Crown",
     "name": "Passata",
-    "description": "King's Crown. Passata. Tomato sauces. 700g. Vegan, European Vegetarian Union, Nutriscore Grade A.",
-    "price_cents": 175,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/406/146/366/0800/front_de.32.400.jpg",
-    "attrs": {
-      "off_code": "4061463660800",
-      "search_term": "tomaten passata",
-      "category": "Tomato sauces",
-      "quantity": "700g",
-      "bio": false
-    }
+    "hersteller": "King's Crown",
+    "weight": "700g",
+    "price": "12,40",
+    "kategorie": "Tomato sauces",
+    "img": "https://images.openfoodfacts.org/images/products/406/146/366/0800/front_de.32.400.jpg",
+    "ean": "4061463660800",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:vegan",
+      "en:european-vegetarian-union",
+      "en:nutriscore",
+      "en:nutriscore-grade-a"
+    ],
+    "suchwort": "tomaten passata"
   },
   {
-    "partner": "edeka",
-    "brand": "Albert Heijn",
     "name": "Tomaten Passata",
-    "description": "Albert Heijn. Tomaten Passata. Strained tomatoes. 500g. No gluten, FSC Mix, No lactose.",
-    "price_cents": 1230,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/871/890/731/6750/front_nl.11.400.jpg",
-    "attrs": {
-      "off_code": "8718907316750",
-      "search_term": "tomaten passata",
-      "category": "Strained tomatoes",
-      "quantity": "500g",
-      "bio": false
-    }
+    "hersteller": "Albert Heijn",
+    "weight": "500g",
+    "price": "12,18",
+    "kategorie": "Strained tomatoes",
+    "img": "https://images.openfoodfacts.org/images/products/871/890/731/6750/front_nl.11.400.jpg",
+    "ean": "8718907316750",
+    "labels_tags": [
+      "en:no-gluten",
+      "en:fsc",
+      "en:fsc-mix",
+      "en:no-lactose"
+    ],
+    "suchwort": "tomaten passata"
   },
   {
-    "partner": "edeka",
-    "brand": "ReweBio",
     "name": "Passata Tomaten",
-    "description": "ReweBio. Passata Tomaten. passierte Tomaten. Tomato purées. 700g. IT-BIO-006.",
-    "price_cents": 1248,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/433/725/634/3107/front_de.28.400.jpg",
-    "attrs": {
-      "off_code": "4337256343107",
-      "search_term": "tomaten passata",
-      "category": "Tomato purées",
-      "quantity": "700g",
-      "bio": true
-    }
+    "hersteller": "ReweBio",
+    "weight": "700g",
+    "price": "13,57",
+    "kategorie": "Tomato purées",
+    "img": "https://images.openfoodfacts.org/images/products/433/725/634/3107/front_de.28.400.jpg",
+    "ean": "4337256343107",
+    "labels_tags": [
+      "en:organic",
+      "en:eu-organic",
+      "en:it-bio-006"
+    ],
+    "suchwort": "tomaten passata"
   },
   {
-    "partner": "edeka",
-    "brand": "Alnatura",
     "name": "Passata",
-    "description": "Alnatura. Passata. Tomato sauces. 690 g. IT-BIO-008.",
-    "price_cents": 861,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/000/004/004/5238/front_en.7.400.jpg",
-    "attrs": {
-      "off_code": "40045238",
-      "search_term": "tomaten passata",
-      "category": "Tomato sauces",
-      "quantity": "690 g",
-      "bio": true
-    }
+    "hersteller": "Alnatura",
+    "weight": "690 g",
+    "price": "4,33",
+    "kategorie": "Tomato sauces",
+    "img": "https://images.openfoodfacts.org/images/products/000/004/004/5238/front_en.7.400.jpg",
+    "ean": "40045238",
+    "labels_tags": [
+      "en:organic",
+      "en:eu-organic",
+      "en:it-bio-008"
+    ],
+    "suchwort": "tomaten passata"
   },
   {
-    "partner": "edeka",
-    "brand": "Beste Ernte",
     "name": "Passata Rustica grob passiert",
-    "description": "Beste Ernte. Passata Rustica grob passiert. Beverages. 690g. Nutriscore Grade A.",
-    "price_cents": 150,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/431/626/871/3177/front_de.5.400.jpg",
-    "attrs": {
-      "off_code": "4316268713177",
-      "search_term": "tomaten passata",
-      "category": "Beverages",
-      "quantity": "690g",
-      "bio": false
-    }
+    "hersteller": "Beste Ernte",
+    "weight": "690g",
+    "price": "8,11",
+    "kategorie": "Beverages",
+    "img": "https://images.openfoodfacts.org/images/products/431/626/871/3177/front_de.5.400.jpg",
+    "ean": "4316268713177",
+    "labels_tags": [
+      "en:nutriscore",
+      "en:nutriscore-grade-a"
+    ],
+    "suchwort": "tomaten passata"
   },
   {
-    "partner": "edeka",
-    "brand": "Cucina",
     "name": "Passata rustica",
-    "description": "Cucina. Passata rustica. Passierte Tomaten. Tomato sauces. 690g.",
-    "price_cents": 501,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/406/145/801/6957/front_de.43.400.jpg",
-    "attrs": {
-      "off_code": "4061458016957",
-      "search_term": "tomaten passata",
-      "category": "Tomato sauces",
-      "quantity": "690g",
-      "bio": false
-    }
+    "hersteller": "Cucina",
+    "weight": "690g",
+    "price": "2,48",
+    "kategorie": "Tomato sauces",
+    "img": "https://images.openfoodfacts.org/images/products/406/145/801/6957/front_de.43.400.jpg",
+    "ean": "4061458016957",
+    "labels_tags": [],
+    "suchwort": "tomaten passata"
   },
   {
-    "partner": "edeka",
-    "brand": "Alnatura",
     "name": "Passata Fein Passiert Natur",
-    "description": "Alnatura. Passata Fein Passiert Natur. Bio Tomaten, fein passiert. Tomato purées. 660ml. de:Bio 7 Initiative, IT-BIO-007, Made in Italy, The Vegan Society.",
-    "price_cents": 144,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/410/442/003/1562/front_de.70.400.jpg",
-    "attrs": {
-      "off_code": "4104420031562",
-      "search_term": "tomaten passata",
-      "category": "Tomato purées",
-      "quantity": "660ml",
-      "bio": true
-    }
+    "hersteller": "Alnatura",
+    "weight": "660ml",
+    "price": "11,70",
+    "kategorie": "Tomato purées",
+    "img": "https://images.openfoodfacts.org/images/products/410/442/003/1562/front_de.70.400.jpg",
+    "ean": "4104420031562",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:organic",
+      "en:eu-organic",
+      "en:vegan",
+      "de:bio-7-initiative",
+      "en:it-bio-007",
+      "en:made-in-italy",
+      "en:the-vegan-society"
+    ],
+    "suchwort": "tomaten passata"
   },
   {
-    "partner": "edeka",
-    "brand": "Naturata",
     "name": "Tomaten Passata",
-    "description": "Naturata. Tomaten Passata. Cooking helpers. 700g. DE-ÖKO-007, Demeter, IT-BIO-009, No added salt.",
-    "price_cents": 1189,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/402/429/715/8158/front_fr.4.400.jpg",
-    "attrs": {
-      "off_code": "4024297158158",
-      "search_term": "tomaten passata",
-      "category": "Cooking helpers",
-      "quantity": "700g",
-      "bio": true
-    }
+    "hersteller": "Naturata",
+    "weight": "700g",
+    "price": "1,77",
+    "kategorie": "Cooking helpers",
+    "img": "https://images.openfoodfacts.org/images/products/402/429/715/8158/front_fr.4.400.jpg",
+    "ean": "4024297158158",
+    "labels_tags": [
+      "en:low-or-no-salt",
+      "en:organic",
+      "en:eu-organic",
+      "en:biodynamic-agriculture",
+      "en:de-oko-007",
+      "en:demeter",
+      "en:it-bio-009",
+      "en:no-added-salt"
+    ],
+    "suchwort": "tomaten passata"
   },
   {
-    "partner": "edeka",
-    "brand": "Eridanous",
+    "name": "Passata pomodoro ‐ Passierte Tomaten",
+    "hersteller": "Sterilgarda",
+    "weight": "500 g",
+    "price": "12,04",
+    "kategorie": "Arrabbiata sauces",
+    "img": "https://images.openfoodfacts.org/images/products/800/279/500/0175/front_en.41.400.jpg",
+    "ean": "8002795000175",
+    "labels_tags": [
+      "en:fsc",
+      "en:made-in-italy"
+    ],
+    "suchwort": "tomaten passata"
+  },
+  {
+    "name": "Passata",
+    "hersteller": "Pfandwerk",
+    "weight": "500g",
+    "price": "1,71",
+    "kategorie": "Tomato sauces",
+    "img": "https://images.openfoodfacts.org/images/products/426/034/815/8450/front_de.17.400.jpg",
+    "ean": "4260348158450",
+    "labels_tags": [
+      "en:organic",
+      "en:carbon-compensated-product",
+      "en:eu-organic",
+      "en:eu-agriculture"
+    ],
+    "suchwort": "tomaten passata"
+  },
+  {
     "name": "OliVenös/Huile d'Olive Vierge Extra Grecque Olivenöl",
-    "description": "Eridanous. OliVenös/Huile d'Olive Vierge Extra Grecque Olivenöl. Extra-virgin olive oils. 750ml. Vegan, PDO.",
-    "price_cents": 321,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/000/002/029/3604/front_en.26.400.jpg",
-    "attrs": {
-      "off_code": "20293604",
-      "search_term": "olivenöl",
-      "category": "Extra-virgin olive oils",
-      "quantity": "750ml",
-      "bio": false
-    }
+    "hersteller": "Eridanous",
+    "weight": "750ml",
+    "price": "13,16",
+    "kategorie": "Extra-virgin olive oils",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/029/3604/front_en.26.400.jpg",
+    "ean": "20293604",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:vegan",
+      "en:pdo"
+    ],
+    "suchwort": "olivenöl"
   },
   {
-    "partner": "edeka",
-    "brand": "Deluxe",
     "name": "Olivenöl",
-    "description": "Deluxe. Olivenöl. Extra-virgin olive oils. 500ml. PGI.",
-    "price_cents": 642,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/405/648/979/8552/front_en.6.400.jpg",
-    "attrs": {
-      "off_code": "4056489798552",
-      "search_term": "olivenöl",
-      "category": "Extra-virgin olive oils",
-      "quantity": "500ml",
-      "bio": false
-    }
+    "hersteller": "Deluxe",
+    "weight": "500ml",
+    "price": "4,70",
+    "kategorie": "Extra-virgin olive oils",
+    "img": "https://images.openfoodfacts.org/images/products/405/648/979/8552/front_en.6.400.jpg",
+    "ean": "4056489798552",
+    "labels_tags": [
+      "en:pgi"
+    ],
+    "suchwort": "olivenöl"
   },
   {
-    "partner": "edeka",
-    "brand": "Primadonna",
     "name": "Olivenöl",
-    "description": "Primadonna. Olivenöl. Extra-virgin olive oils. 1.5l.",
-    "price_cents": 907,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/000/002/081/4847/front_fr.98.400.jpg",
-    "attrs": {
-      "off_code": "20814847",
-      "search_term": "olivenöl",
-      "category": "Extra-virgin olive oils",
-      "quantity": "1.5l",
-      "bio": false
-    }
+    "hersteller": "Primadonna",
+    "weight": "1.5l",
+    "price": "10,65",
+    "kategorie": "Extra-virgin olive oils",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/081/4847/front_fr.98.400.jpg",
+    "ean": "20814847",
+    "labels_tags": [],
+    "suchwort": "olivenöl"
   },
   {
-    "partner": "edeka",
-    "brand": null,
     "name": "Olivenöl",
-    "description": "Olivenöl. Extra-virgin olive oils. 1pcs. EU Organic.",
-    "price_cents": 344,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/376/029/180/0358/front_fr.6.400.jpg",
-    "attrs": {
-      "off_code": "3760291800358",
-      "search_term": "olivenöl",
-      "category": "Extra-virgin olive oils",
-      "quantity": "1pcs",
-      "bio": true
-    }
+    "hersteller": null,
+    "weight": "1pcs",
+    "price": "14,42",
+    "kategorie": "Extra-virgin olive oils",
+    "img": "https://images.openfoodfacts.org/images/products/376/029/180/0358/front_fr.6.400.jpg",
+    "ean": "3760291800358",
+    "labels_tags": [
+      "en:organic",
+      "en:eu-organic"
+    ],
+    "suchwort": "olivenöl"
   },
   {
-    "partner": "edeka",
-    "brand": "Filippo Berio",
     "name": "Natives Olivenöl Extra",
-    "description": "Filippo Berio. Natives Olivenöl Extra. Extra-virgin olive oils. 500ml.",
-    "price_cents": 1156,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/800/221/011/3312/front_en.21.400.jpg",
-    "attrs": {
-      "off_code": "8002210113312",
-      "search_term": "olivenöl",
-      "category": "Extra-virgin olive oils",
-      "quantity": "500ml",
-      "bio": false
-    }
+    "hersteller": "Filippo Berio",
+    "weight": "500ml",
+    "price": "11,37",
+    "kategorie": "Extra-virgin olive oils",
+    "img": "https://images.openfoodfacts.org/images/products/800/221/011/3312/front_en.21.400.jpg",
+    "ean": "8002210113312",
+    "labels_tags": [],
+    "suchwort": "olivenöl"
   },
   {
-    "partner": "edeka",
-    "brand": "Filippo Berio",
     "name": "Olivenöl",
-    "description": "Filippo Berio. Olivenöl. Extra-virgin olive oils. 1l.",
-    "price_cents": 290,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/800/221/011/5699/front_fr.31.400.jpg",
-    "attrs": {
-      "off_code": "8002210115699",
-      "search_term": "olivenöl",
-      "category": "Extra-virgin olive oils",
-      "quantity": "1l",
-      "bio": false
-    }
+    "hersteller": "Filippo Berio",
+    "weight": "1l",
+    "price": "9,24",
+    "kategorie": "Extra-virgin olive oils",
+    "img": "https://images.openfoodfacts.org/images/products/800/221/011/5699/front_fr.31.400.jpg",
+    "ean": "8002210115699",
+    "labels_tags": [],
+    "suchwort": "olivenöl"
   },
   {
-    "partner": "edeka",
-    "brand": "Nikos",
     "name": "Griechisches natives Olivenöl Extra",
-    "description": "Nikos. Griechisches natives Olivenöl Extra. Virgin olive oils. 2019 Gold medal of the German Agricultural Society, PGI.",
-    "price_cents": 1218,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/425/117/550/3049/front_en.3.400.jpg",
-    "attrs": {
-      "off_code": "4251175503049",
-      "search_term": "olivenöl",
-      "category": "Virgin olive oils",
-      "bio": false
-    }
+    "hersteller": "Nikos",
+    "weight": null,
+    "price": "6,92",
+    "kategorie": "Virgin olive oils",
+    "img": "https://images.openfoodfacts.org/images/products/425/117/550/3049/front_en.3.400.jpg",
+    "ean": "4251175503049",
+    "labels_tags": [
+      "en:german-agricultural-society",
+      "en:gold-medal-of-the-german-agricultural-society",
+      "en:2019-gold-medal-of-the-german-agricultural-society",
+      "en:pgi"
+    ],
+    "suchwort": "olivenöl"
   },
   {
-    "partner": "edeka",
-    "brand": "Monini",
     "name": "Natives Olivenöl",
-    "description": "Monini. Natives Olivenöl. Olive oils. 500ml.",
-    "price_cents": 680,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/800/551/000/1563/front_de.21.400.jpg",
-    "attrs": {
-      "off_code": "8005510001563",
-      "search_term": "olivenöl",
-      "category": "Olive oils",
-      "quantity": "500ml",
-      "bio": false
-    }
+    "hersteller": "Monini",
+    "weight": "500ml",
+    "price": "10,02",
+    "kategorie": "Olive oils",
+    "img": "https://images.openfoodfacts.org/images/products/800/551/000/1563/front_de.21.400.jpg",
+    "ean": "8005510001563",
+    "labels_tags": [],
+    "suchwort": "olivenöl"
   },
   {
-    "partner": "edeka",
-    "brand": "Coop naturaplan",
     "name": "Italienisches Olivenöl",
-    "description": "Coop naturaplan. Italienisches Olivenöl. Extra-virgin olive oils. 500ml. IT-BIO-006, PDO.",
-    "price_cents": 1196,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/761/341/395/8498/front_fr.3.400.jpg",
-    "attrs": {
-      "off_code": "7613413958498",
-      "search_term": "olivenöl",
-      "category": "Extra-virgin olive oils",
-      "quantity": "500ml",
-      "bio": true
-    }
+    "hersteller": "Coop naturaplan",
+    "weight": "500ml",
+    "price": "12,48",
+    "kategorie": "Extra-virgin olive oils",
+    "img": "https://images.openfoodfacts.org/images/products/761/341/395/8498/front_fr.3.400.jpg",
+    "ean": "7613413958498",
+    "labels_tags": [
+      "en:organic",
+      "en:eu-organic",
+      "en:it-bio-006",
+      "en:pdo"
+    ],
+    "suchwort": "olivenöl"
   },
   {
-    "partner": "edeka",
-    "brand": "De Cecco",
     "name": "Natives Olivenöl Extra",
-    "description": "De Cecco. Natives Olivenöl Extra. Extra-virgin olive oils. 500ml. Green Dot, HACCP, ISO 14001, ISO 9001, de:BH OHSAS 18001, de:EPD, de:SA8000.",
-    "price_cents": 1445,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/800/125/001/2968/front_en.21.400.jpg",
-    "attrs": {
-      "off_code": "8001250012968",
-      "search_term": "olivenöl",
-      "category": "Extra-virgin olive oils",
-      "quantity": "500ml",
-      "bio": false
-    }
+    "hersteller": "De Cecco",
+    "weight": "500ml",
+    "price": "9,77",
+    "kategorie": "Extra-virgin olive oils",
+    "img": "https://images.openfoodfacts.org/images/products/800/125/001/2968/front_en.21.400.jpg",
+    "ean": "8001250012968",
+    "labels_tags": [
+      "en:green-dot",
+      "en:haccp",
+      "en:iso-14001",
+      "en:iso-9001",
+      "de:BH OHSAS 18001",
+      "de:EPD",
+      "de:SA8000"
+    ],
+    "suchwort": "olivenöl"
   },
   {
-    "partner": "edeka",
-    "brand": "Coop",
     "name": "Qualité & Prix - Sardinen in Olivenöl",
-    "description": "Coop. Qualité & Prix - Sardinen in Olivenöl. Sardines in olive oil. 90g. Sustainable Seafood MSC.",
-    "price_cents": 419,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/761/084/685/4786/front_fr.33.400.jpg",
-    "attrs": {
-      "off_code": "7610846854786",
-      "search_term": "olivenöl",
-      "category": "Sardines in olive oil",
-      "quantity": "90g",
-      "bio": false
-    }
+    "hersteller": "Coop",
+    "weight": "90g",
+    "price": "7,89",
+    "kategorie": "Sardines in olive oil",
+    "img": "https://images.openfoodfacts.org/images/products/761/084/685/4786/front_fr.33.400.jpg",
+    "ean": "7610846854786",
+    "labels_tags": [
+      "en:sustainable",
+      "en:sustainable-fishery",
+      "en:sustainable-seafood-msc"
+    ],
+    "suchwort": "olivenöl"
   },
   {
-    "partner": "edeka",
-    "brand": "Saupiquet RIO mare",
     "name": "Thunfisch-Filets in Olivenöl",
-    "description": "Saupiquet RIO mare. Thunfisch-Filets in Olivenöl. Fish fillets. 160g. Sustainable Seafood MSC.",
-    "price_cents": 260,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/316/595/057/7624/front_fr.26.400.jpg",
-    "attrs": {
-      "off_code": "3165950577624",
-      "search_term": "olivenöl",
-      "category": "Fish fillets",
-      "quantity": "160g",
-      "bio": false
-    }
+    "hersteller": "Saupiquet RIO mare",
+    "weight": "160g",
+    "price": "6,62",
+    "kategorie": "Fish fillets",
+    "img": "https://images.openfoodfacts.org/images/products/316/595/057/7624/front_fr.26.400.jpg",
+    "ean": "3165950577624",
+    "labels_tags": [
+      "en:sustainable",
+      "en:sustainable-fishery",
+      "en:sustainable-seafood-msc"
+    ],
+    "suchwort": "olivenöl"
   },
   {
-    "partner": "edeka",
-    "brand": "Bellarom",
+    "name": "Olivenöl",
+    "hersteller": "Carrefour",
+    "weight": "1pcs",
+    "price": "5,57",
+    "kategorie": "Extra-virgin olive oils",
+    "img": "https://images.openfoodfacts.org/images/products/843/187/626/7846/front_es.35.400.jpg",
+    "ean": "8431876267846",
+    "labels_tags": [
+      "en:organic"
+    ],
+    "suchwort": "olivenöl"
+  },
+  {
+    "name": "Il Nobile Natives Olivenöl Extra",
+    "hersteller": "Carapelli",
+    "weight": "500ml",
+    "price": "4,17",
+    "kategorie": "Olive oils from Italy",
+    "img": "https://images.openfoodfacts.org/images/products/800/247/002/8845/front_en.29.400.jpg",
+    "ean": "8002470028845",
+    "labels_tags": [
+      "en:kosher",
+      "en:orthodox-union-kosher"
+    ],
+    "suchwort": "olivenöl"
+  },
+  {
+    "name": "italienisches Olivenöl",
+    "hersteller": "Coop naturaplan",
+    "weight": "1l",
+    "price": "14,80",
+    "kategorie": "Extra-virgin olive oils",
+    "img": "https://images.openfoodfacts.org/images/products/762/753/430/7158/front_fr.3.400.jpg",
+    "ean": "7627534307158",
+    "labels_tags": [
+      "en:pgi"
+    ],
+    "suchwort": "olivenöl"
+  },
+  {
     "name": "Instant Kaffee",
-    "description": "Bellarom. Instant Kaffee. Beverages. 200g. Rainforest Alliance.",
-    "price_cents": 1240,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/405/648/944/0628/front_en.26.400.jpg",
-    "attrs": {
-      "off_code": "4056489440628",
-      "search_term": "kaffee",
-      "category": "Beverages",
-      "quantity": "200g",
-      "bio": false
-    }
+    "hersteller": "Bellarom",
+    "weight": "200g",
+    "price": "5,48",
+    "kategorie": "Beverages",
+    "img": "https://images.openfoodfacts.org/images/products/405/648/944/0628/front_en.26.400.jpg",
+    "ean": "4056489440628",
+    "labels_tags": [
+      "en:rainforest-alliance"
+    ],
+    "suchwort": "kaffee"
   },
   {
-    "partner": "edeka",
-    "brand": "Maxwell House",
     "name": "löslichen Kaffee",
-    "description": "Maxwell House. löslichen Kaffee. Hot beverages. 200g. Green Dot, Triman, Point Vert.",
-    "price_cents": 1218,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/871/100/052/2967/front_en.50.400.jpg",
-    "attrs": {
-      "off_code": "8711000522967",
-      "search_term": "kaffee",
-      "category": "Hot beverages",
-      "quantity": "200g",
-      "bio": false
-    }
+    "hersteller": "Maxwell House",
+    "weight": "200g",
+    "price": "2,16",
+    "kategorie": "Hot beverages",
+    "img": "https://images.openfoodfacts.org/images/products/871/100/052/2967/front_en.50.400.jpg",
+    "ean": "8711000522967",
+    "labels_tags": [
+      "en:green-dot",
+      "fr:triman",
+      "en:Point Vert"
+    ],
+    "suchwort": "kaffee"
   },
   {
-    "partner": "edeka",
-    "brand": "Nestlé",
     "name": "Instant Kaffee",
-    "description": "Nestlé. Instant Kaffee. Beverages. 200g. Green Dot, de:Unter Schutzatmosphäre verpackt.",
-    "price_cents": 1357,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/761/303/630/5846/front_de.106.400.jpg",
-    "attrs": {
-      "off_code": "7613036305846",
-      "search_term": "kaffee",
-      "category": "Beverages",
-      "quantity": "200g",
-      "bio": false
-    }
+    "hersteller": "Nestlé",
+    "weight": "200g",
+    "price": "12,25",
+    "kategorie": "Beverages",
+    "img": "https://images.openfoodfacts.org/images/products/761/303/630/5846/front_de.106.400.jpg",
+    "ean": "7613036305846",
+    "labels_tags": [
+      "en:green-dot",
+      "de:Unter Schutzatmosphäre verpackt"
+    ],
+    "suchwort": "kaffee"
   },
   {
-    "partner": "edeka",
-    "brand": "Deutsche Extrakt Kaffee",
     "name": "Typ Cappuccino classic",
-    "description": "Deutsche Extrakt Kaffee. Typ Cappuccino classic. Powdered cappucino. 200 g. Nutriscore Grade E.",
-    "price_cents": 433,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/433/725/638/1185/front_de.29.400.jpg",
-    "attrs": {
-      "off_code": "4337256381185",
-      "search_term": "kaffee",
-      "category": "Powdered cappucino",
-      "quantity": "200 g",
-      "bio": false
-    }
+    "hersteller": "Deutsche Extrakt Kaffee",
+    "weight": "200 g",
+    "price": "6,63",
+    "kategorie": "Powdered cappucino",
+    "img": "https://images.openfoodfacts.org/images/products/433/725/638/1185/front_de.29.400.jpg",
+    "ean": "4337256381185",
+    "labels_tags": [
+      "en:nutriscore",
+      "en:nutriscore-grade-e"
+    ],
+    "suchwort": "kaffee"
   },
   {
-    "partner": "edeka",
-    "brand": "Lidl",
     "name": "Belladonna Löslicher Kaffee Entkoffeiniert",
-    "description": "Lidl. Belladonna Löslicher Kaffee Entkoffeiniert. Decaffeinated instant coffees. 100g, 55 cups. Rainforest Alliance Coffee, Triman.",
-    "price_cents": 811,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/000/002/099/1241/front_en.3.400.jpg",
-    "attrs": {
-      "off_code": "20991241",
-      "search_term": "kaffee",
-      "category": "Decaffeinated instant coffees",
-      "quantity": "100g, 55 cups",
-      "bio": false
-    }
+    "hersteller": "Lidl",
+    "weight": "100g, 55 cups",
+    "price": "11,24",
+    "kategorie": "Decaffeinated instant coffees",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/099/1241/front_en.3.400.jpg",
+    "ean": "20991241",
+    "labels_tags": [
+      "en:rainforest-alliance",
+      "en:rainforest-alliance-coffee",
+      "fr:triman"
+    ],
+    "suchwort": "kaffee"
   },
   {
-    "partner": "edeka",
-    "brand": "CARTE NOIR",
     "name": "Kaffee Café grains Carte noire",
-    "description": "CARTE NOIR. Kaffee Café grains Carte noire. Beverages. 1kg.",
-    "price_cents": 248,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/800/007/006/3334/front_fr.3.400.jpg",
-    "attrs": {
-      "off_code": "8000070063334",
-      "search_term": "kaffee",
-      "category": "Beverages",
-      "quantity": "1kg",
-      "bio": false
-    }
+    "hersteller": "CARTE NOIR",
+    "weight": "1kg",
+    "price": "10,62",
+    "kategorie": "Beverages",
+    "img": "https://images.openfoodfacts.org/images/products/800/007/006/3334/front_fr.3.400.jpg",
+    "ean": "8000070063334",
+    "labels_tags": [],
+    "suchwort": "kaffee"
   },
   {
-    "partner": "edeka",
-    "brand": "Wunderbar",
     "name": "Jacobs Gold",
-    "description": "Wunderbar. Jacobs Gold. Instant-Kaffee. Beverages. 200 g. Green Dot, Made in Germany, de:Unter Schutzatmosphäre verpackt.",
-    "price_cents": 1170,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/400/050/804/0306/front_de.76.400.jpg",
-    "attrs": {
-      "off_code": "4000508040306",
-      "search_term": "kaffee",
-      "category": "Beverages",
-      "quantity": "200 g",
-      "bio": false
-    }
+    "hersteller": "Wunderbar",
+    "weight": "200 g",
+    "price": "7,52",
+    "kategorie": "Beverages",
+    "img": "https://images.openfoodfacts.org/images/products/400/050/804/0306/front_de.76.400.jpg",
+    "ean": "4000508040306",
+    "labels_tags": [
+      "en:green-dot",
+      "en:made-in-germany",
+      "de:Unter Schutzatmosphäre verpackt"
+    ],
+    "suchwort": "kaffee"
   },
   {
-    "partner": "edeka",
-    "brand": "Bellarom",
     "name": "Kaffe",
-    "description": "Bellarom. Kaffe. Beverages. 500g. Rainforest Alliance.",
-    "price_cents": 177,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/405/648/960/0596/front_en.5.400.jpg",
-    "attrs": {
-      "off_code": "4056489600596",
-      "search_term": "kaffee",
-      "category": "Beverages",
-      "quantity": "500g",
-      "bio": false
-    }
+    "hersteller": "Bellarom",
+    "weight": "500g",
+    "price": "9,68",
+    "kategorie": "Beverages",
+    "img": "https://images.openfoodfacts.org/images/products/405/648/960/0596/front_en.5.400.jpg",
+    "ean": "4056489600596",
+    "labels_tags": [
+      "en:rainforest-alliance"
+    ],
+    "suchwort": "kaffee"
   },
   {
-    "partner": "edeka",
-    "brand": "Dallmayr",
     "name": "Dallmayr Prodomo Kaffee",
-    "description": "Dallmayr. Dallmayr Prodomo Kaffee. Plant-based beverages. 500g. FSC Recycling.",
-    "price_cents": 1204,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/400/816/710/3714/front_de.90.400.jpg",
-    "attrs": {
-      "off_code": "4008167103714",
-      "search_term": "kaffee",
-      "category": "Plant-based beverages",
-      "quantity": "500g",
-      "bio": false
-    }
+    "hersteller": "Dallmayr",
+    "weight": "500g",
+    "price": "6,38",
+    "kategorie": "Plant-based beverages",
+    "img": "https://images.openfoodfacts.org/images/products/400/816/710/3714/front_de.90.400.jpg",
+    "ean": "4008167103714",
+    "labels_tags": [
+      "en:fsc",
+      "en:fsc-recycling"
+    ],
+    "suchwort": "kaffee"
   },
   {
-    "partner": "edeka",
-    "brand": "Jabobs",
     "name": "Krönung Signature",
-    "description": "Jabobs. Krönung Signature. Beverages. 500g.",
-    "price_cents": 171,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/871/100/070/8651/front_de.3.400.jpg",
-    "attrs": {
-      "off_code": "8711000708651",
-      "search_term": "kaffee",
-      "category": "Beverages",
-      "quantity": "500g",
-      "bio": false
-    }
+    "hersteller": "Jabobs",
+    "weight": "500g",
+    "price": "12,96",
+    "kategorie": "Beverages",
+    "img": "https://images.openfoodfacts.org/images/products/871/100/070/8651/front_de.3.400.jpg",
+    "ean": "8711000708651",
+    "labels_tags": [],
+    "suchwort": "kaffee"
   },
   {
-    "partner": "edeka",
-    "brand": "LavAzza - Luigi Lavazza S.p.A.",
     "name": "Qualità Oro - Kapseln",
-    "description": "LavAzza - Luigi Lavazza S.p.A.. Qualità Oro - Kapseln. Nespresso-compatible coffee capsules. 10pcs. Made in Italy.",
-    "price_cents": 1316,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/800/007/005/3465/front_de.13.400.jpg",
-    "attrs": {
-      "off_code": "8000070053465",
-      "search_term": "kaffee",
-      "category": "Nespresso-compatible coffee capsules",
-      "quantity": "10pcs",
-      "bio": false
-    }
+    "hersteller": "LavAzza - Luigi Lavazza S.p.A.",
+    "weight": "10pcs",
+    "price": "1,98",
+    "kategorie": "Nespresso-compatible coffee capsules",
+    "img": "https://images.openfoodfacts.org/images/products/800/007/005/3465/front_de.13.400.jpg",
+    "ean": "8000070053465",
+    "labels_tags": [
+      "en:made-in-italy"
+    ],
+    "suchwort": "kaffee"
   },
   {
-    "partner": "edeka",
-    "brand": "ja!",
     "name": "Typ Cappuccino - weniger süß im Geschmack",
-    "description": "ja!. Typ Cappuccino - weniger süß im Geschmack. Getränkepulver mit löslichem Bohnenkaffee. Coffees. 200 g. Nutriscore Grade C, Rainforest Alliance Coffee.",
-    "price_cents": 470,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/433/725/638/2304/front_de.44.400.jpg",
-    "attrs": {
-      "off_code": "4337256382304",
-      "search_term": "kaffee",
-      "category": "Coffees",
-      "quantity": "200 g",
-      "bio": false
-    }
+    "hersteller": "ja!",
+    "weight": "200 g",
+    "price": "2,90",
+    "kategorie": "Coffees",
+    "img": "https://images.openfoodfacts.org/images/products/433/725/638/2304/front_de.44.400.jpg",
+    "ean": "4337256382304",
+    "labels_tags": [
+      "en:nutriscore",
+      "en:nutriscore-grade-c",
+      "en:rainforest-alliance",
+      "en:rainforest-alliance-coffee"
+    ],
+    "suchwort": "kaffee"
   },
   {
-    "partner": "edeka",
-    "brand": "Crownfield (Lidl)",
+    "name": "Nescafé Classic",
+    "hersteller": "Nestlé",
+    "weight": "200g",
+    "price": "10,97",
+    "kategorie": "Beverages",
+    "img": "https://images.openfoodfacts.org/images/products/400/550/000/5827/front_en.45.400.jpg",
+    "ean": "4005500005827",
+    "labels_tags": [],
+    "suchwort": "kaffee"
+  },
+  {
+    "name": "Kaffee, Café en grains 100% arabica",
+    "hersteller": "Lavazza",
+    "weight": "1kg",
+    "price": "9,05",
+    "kategorie": "Coffees",
+    "img": "https://images.openfoodfacts.org/images/products/800/007/002/0559/front_en.6.400.jpg",
+    "ean": "8000070020559",
+    "labels_tags": [],
+    "suchwort": "kaffee"
+  },
+  {
+    "name": "Dinkelkaffee mit Zichorie",
+    "hersteller": "dmBio",
+    "weight": "100g",
+    "price": "3,86",
+    "kategorie": "Beverages",
+    "img": "https://images.openfoodfacts.org/images/products/406/644/741/5254/front_de.57.400.jpg",
+    "ean": "4066447415254",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:organic",
+      "en:eu-organic",
+      "en:vegan",
+      "en:de-oko-005",
+      "en:european-vegetarian-union",
+      "en:european-vegetarian-union-vegan",
+      "en:made-in-germany",
+      "en:naturland"
+    ],
+    "suchwort": "kaffee"
+  },
+  {
     "name": "Premium Müsli mit Früchten und Kernen",
-    "description": "Crownfield (Lidl). Premium Müsli mit Früchten und Kernen. Mueslis with fruits. 750g. German Agricultural Society, Green Dot, High fibres, Made in Belgium, Natural product, Nutriscore Grade C, de:dlg-jahrlich-pramiert.",
-    "price_cents": 1065,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/000/002/020/2866/front_en.88.400.jpg",
-    "attrs": {
-      "off_code": "20202866",
-      "search_term": "müsli",
-      "category": "Mueslis with fruits",
-      "quantity": "750g",
-      "bio": false
-    }
+    "hersteller": "Crownfield (Lidl)",
+    "weight": "750g",
+    "price": "7,49",
+    "kategorie": "Mueslis with fruits",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/020/2866/front_en.88.400.jpg",
+    "ean": "20202866",
+    "labels_tags": [
+      "en:german-agricultural-society",
+      "en:source-of-fibre",
+      "en:green-dot",
+      "en:high-fibres",
+      "en:made-in-belgium",
+      "en:natural-product",
+      "en:nutriscore",
+      "en:nutriscore-grade-c",
+      "de:dlg-jahrlich-pramiert"
+    ],
+    "suchwort": "müsli"
   },
   {
-    "partner": "edeka",
-    "brand": "Crownfield",
     "name": "Traube- Nuss Müsli",
-    "description": "Crownfield. Traube- Nuss Müsli. Mueslis with nuts. 1kg. Green Dot, High fibres, Nutriscore Grade A.",
-    "price_cents": 1442,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/000/002/035/3889/front_en.506.400.jpg",
-    "attrs": {
-      "off_code": "20353889",
-      "search_term": "müsli",
-      "category": "Mueslis with nuts",
-      "quantity": "1kg",
-      "bio": false
-    }
+    "hersteller": "Crownfield",
+    "weight": "1kg",
+    "price": "3,60",
+    "kategorie": "Mueslis with nuts",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/035/3889/front_en.506.400.jpg",
+    "ean": "20353889",
+    "labels_tags": [
+      "en:source-of-fibre",
+      "en:green-dot",
+      "en:high-fibres",
+      "en:nutriscore",
+      "en:nutriscore-grade-a"
+    ],
+    "suchwort": "müsli"
   },
   {
-    "partner": "edeka",
-    "brand": "Crownfield",
     "name": "Müsli Multifrucht",
-    "description": "Crownfield. Müsli Multifrucht. Müsli alla frutta con il 32% di frutta secca. Bircher-style mueslis with fruits. 1000g. Made in Germany, Nutriscore Grade B.",
-    "price_cents": 1137,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/000/002/000/3234/front_it.86.400.jpg",
-    "attrs": {
-      "off_code": "20003234",
-      "search_term": "müsli",
-      "category": "Bircher-style mueslis with fruits",
-      "quantity": "1000g",
-      "bio": false
-    }
+    "hersteller": "Crownfield",
+    "weight": "1000g",
+    "price": "10,50",
+    "kategorie": "Bircher-style mueslis with fruits",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/000/3234/front_it.86.400.jpg",
+    "ean": "20003234",
+    "labels_tags": [
+      "en:made-in-germany",
+      "en:nutriscore",
+      "en:nutriscore-grade-b"
+    ],
+    "suchwort": "müsli"
   },
   {
-    "partner": "edeka",
-    "brand": "dmBio",
     "name": "Kerne & Saaten Granola",
-    "description": "dmBio. Kerne & Saaten Granola. Mueslis with nuts. 500g. EG-Öko-Verordnung, AT-BIO-301, BG-BIO-14, European Vegetarian Union Vegan, SI-EKO-004.",
-    "price_cents": 924,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/406/779/600/0269/front_hr.37.400.jpg",
-    "attrs": {
-      "off_code": "4067796000269",
-      "search_term": "müsli",
-      "category": "Mueslis with nuts",
-      "quantity": "500g",
-      "bio": true
-    }
+    "hersteller": "dmBio",
+    "weight": "500g",
+    "price": "9,12",
+    "kategorie": "Mueslis with nuts",
+    "img": "https://images.openfoodfacts.org/images/products/406/779/600/0269/front_hr.37.400.jpg",
+    "ean": "4067796000269",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:organic",
+      "en:eu-organic",
+      "en:vegan",
+      "de:eg-öko-verordnung",
+      "en:at-bio-301",
+      "en:bg-bio-14",
+      "en:european-vegetarian-union",
+      "en:european-vegetarian-union-vegan",
+      "en:si-eko-004"
+    ],
+    "suchwort": "müsli"
   },
   {
-    "partner": "edeka",
-    "brand": "Crownfield",
     "name": "Müsliriegel Apfel",
-    "description": "Crownfield. Müsliriegel Apfel. Fruits cereal bars. 200g. Low or no sugar, non-EU Agriculture, Made in Germany, No added sugar, With sweeteners.",
-    "price_cents": 692,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/000/002/010/4214/front_en.186.400.jpg",
-    "attrs": {
-      "off_code": "20104214",
-      "search_term": "müsli",
-      "category": "Fruits cereal bars",
-      "quantity": "200g",
-      "bio": false
-    }
+    "hersteller": "Crownfield",
+    "weight": "200g",
+    "price": "1,29",
+    "kategorie": "Fruits cereal bars",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/010/4214/front_en.186.400.jpg",
+    "ean": "20104214",
+    "labels_tags": [
+      "en:low-or-no-sugar",
+      "en:non-eu-agriculture",
+      "en:made-in-germany",
+      "en:no-added-sugar",
+      "en:with-sweeteners"
+    ],
+    "suchwort": "müsli"
   },
   {
-    "partner": "edeka",
-    "brand": "Rewe Bio",
     "name": "Dinkel crunchy",
-    "description": "Rewe Bio. Dinkel crunchy. Mueslis. 500g. Naturland, Nutriscore Grade A.",
-    "price_cents": 1002,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/433/725/663/2072/front_de.23.400.jpg",
-    "attrs": {
-      "off_code": "4337256632072",
-      "search_term": "müsli",
-      "category": "Mueslis",
-      "quantity": "500g",
-      "bio": true
-    }
+    "hersteller": "Rewe Bio",
+    "weight": "500g",
+    "price": "14,17",
+    "kategorie": "Mueslis",
+    "img": "https://images.openfoodfacts.org/images/products/433/725/663/2072/front_de.23.400.jpg",
+    "ean": "4337256632072",
+    "labels_tags": [
+      "en:organic",
+      "en:naturland",
+      "en:nutriscore",
+      "en:nutriscore-grade-a"
+    ],
+    "suchwort": "müsli"
   },
   {
-    "partner": "edeka",
-    "brand": "Seitenbacher",
     "name": "Kakao-Düsis",
-    "description": "Seitenbacher. Kakao-Düsis. Kakaohaltige Dinkel-Vollkorn-Röhrchen. Mueslis. 0.0. Green Dot, High fibres, Made in Germany, de:Eiweissquelle.",
-    "price_cents": 1248,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/400/839/121/2145/front_de.68.400.jpg",
-    "attrs": {
-      "off_code": "4008391212145",
-      "search_term": "müsli",
-      "category": "Mueslis",
-      "quantity": "0.0",
-      "bio": false
-    }
+    "hersteller": "Seitenbacher",
+    "weight": "0.0",
+    "price": "2,07",
+    "kategorie": "Mueslis",
+    "img": "https://images.openfoodfacts.org/images/products/400/839/121/2145/front_de.68.400.jpg",
+    "ean": "4008391212145",
+    "labels_tags": [
+      "en:source-of-fibre",
+      "en:green-dot",
+      "en:high-fibres",
+      "en:made-in-germany",
+      "de:Eiweissquelle"
+    ],
+    "suchwort": "müsli"
   },
   {
-    "partner": "edeka",
-    "brand": "Dr. Oetker",
     "name": "Vitalis Knusper Müsli klassisch",
-    "description": "Dr. Oetker. Vitalis Knusper Müsli klassisch. Crunchy mueslis. 600g. Nutriscore Grade C.",
-    "price_cents": 977,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/400/052/166/1205/front_de.52.400.jpg",
-    "attrs": {
-      "off_code": "4000521661205",
-      "search_term": "müsli",
-      "category": "Crunchy mueslis",
-      "quantity": "600g",
-      "bio": false
-    }
+    "hersteller": "Dr. Oetker",
+    "weight": "600g",
+    "price": "11,91",
+    "kategorie": "Crunchy mueslis",
+    "img": "https://images.openfoodfacts.org/images/products/400/052/166/1205/front_de.52.400.jpg",
+    "ean": "4000521661205",
+    "labels_tags": [
+      "en:nutriscore",
+      "en:nutriscore-grade-c"
+    ],
+    "suchwort": "müsli"
   },
   {
-    "partner": "edeka",
-    "brand": "Kölln",
     "name": "Knusper Joghurt Himbeer Müsli",
-    "description": "Kölln. Knusper Joghurt Himbeer Müsli. Mueslis with fruits. 500g. No artificial flavors, Sustainable Palm Oil, 30% less fat.",
-    "price_cents": 789,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/400/054/000/3567/front_de.43.400.jpg",
-    "attrs": {
-      "off_code": "4000540003567",
-      "search_term": "müsli",
-      "category": "Mueslis with fruits",
-      "quantity": "500g",
-      "bio": false
-    }
+    "hersteller": "Kölln",
+    "weight": "500g",
+    "price": "12,22",
+    "kategorie": "Mueslis with fruits",
+    "img": "https://images.openfoodfacts.org/images/products/400/054/000/3567/front_de.43.400.jpg",
+    "ean": "4000540003567",
+    "labels_tags": [
+      "en:low-or-no-fat",
+      "en:sustainable",
+      "en:low-fat",
+      "en:no-artificial-flavors",
+      "en:reduced-fat",
+      "en:sustainable-palm-oil",
+      "en:30-less-fat"
+    ],
+    "suchwort": "müsli"
   },
   {
-    "partner": "edeka",
-    "brand": "Schär",
     "name": "Choco Müsli Glutenfrei",
-    "description": "Schär. Choco Müsli Glutenfrei. Mueslis. 375g. No gluten, No palm oil.",
-    "price_cents": 662,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/800/869/802/0128/front_fr.34.400.jpg",
-    "attrs": {
-      "off_code": "8008698020128",
-      "search_term": "müsli",
-      "category": "Mueslis",
-      "quantity": "375g",
-      "bio": false
-    }
+    "hersteller": "Schär",
+    "weight": "375g",
+    "price": "6,91",
+    "kategorie": "Mueslis",
+    "img": "https://images.openfoodfacts.org/images/products/800/869/802/0128/front_fr.34.400.jpg",
+    "ean": "8008698020128",
+    "labels_tags": [
+      "en:no-gluten",
+      "en:no-palm-oil"
+    ],
+    "suchwort": "müsli"
   },
   {
-    "partner": "edeka",
-    "brand": "dmBio",
     "name": "Beeren-Crunchy mit Haferflocken",
-    "description": "dmBio. Beeren-Crunchy mit Haferflocken. Products without gluten. 350g. No gluten, EG-Öko-Verordnung, BG-BIO-14, CZ-BIO-001, DE-ÖKO-001, European Vegetarian Union Vegan, Made in Germany, SI-EKO-004, V-Label International, de:OATS-DE-201-011.",
-    "price_cents": 557,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/406/644/742/2825/front_en.3.400.jpg",
-    "attrs": {
-      "off_code": "4066447422825",
-      "search_term": "müsli",
-      "category": "Products without gluten",
-      "quantity": "350g",
-      "bio": true
-    }
+    "hersteller": "dmBio",
+    "weight": "350g",
+    "price": "7,45",
+    "kategorie": "Products without gluten",
+    "img": "https://images.openfoodfacts.org/images/products/406/644/742/2825/front_en.3.400.jpg",
+    "ean": "4066447422825",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:no-gluten",
+      "en:organic",
+      "en:eu-organic",
+      "en:vegan",
+      "de:eg-öko-verordnung",
+      "en:bg-bio-14",
+      "en:cz-bio-001",
+      "en:de-oko-001",
+      "en:european-vegetarian-union",
+      "en:european-vegetarian-union-vegan",
+      "en:made-in-germany",
+      "en:si-eko-004",
+      "en:v-label-international",
+      "de:OATS-DE-201-011"
+    ],
+    "suchwort": "müsli"
   },
   {
-    "partner": "edeka",
-    "brand": "EDEKA Bio",
     "name": "Knusper Schoko Müsli",
-    "description": "EDEKA Bio. Knusper Schoko Müsli. Mueslis with chocolate.",
-    "price_cents": 417,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/431/150/107/3759/front_en.3.400.jpg",
-    "attrs": {
-      "off_code": "4311501073759",
-      "search_term": "müsli",
-      "category": "Mueslis with chocolate",
-      "bio": false
-    }
+    "hersteller": "EDEKA Bio",
+    "weight": null,
+    "price": "14,72",
+    "kategorie": "Mueslis with chocolate",
+    "img": "https://images.openfoodfacts.org/images/products/431/150/107/3759/front_en.3.400.jpg",
+    "ean": "4311501073759",
+    "labels_tags": [],
+    "suchwort": "müsli"
   },
   {
-    "partner": "edeka",
-    "brand": "Storck",
+    "name": "Stangenbohnen, Fagiolini piattoni",
+    "hersteller": "Bio-Sonne",
+    "weight": "500g",
+    "price": "7,66",
+    "kategorie": "Plant-based foods",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/024/7928/front_de.58.400.jpg",
+    "ean": "20247928",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:organic",
+      "en:eu-organic",
+      "en:vegan",
+      "en:at-bio-301"
+    ],
+    "suchwort": "müsli"
+  },
+  {
+    "name": "Original müsli",
+    "hersteller": "Rapunzel",
+    "weight": "750g",
+    "price": "12,66",
+    "kategorie": "Mueslis",
+    "img": "https://images.openfoodfacts.org/images/products/400/604/041/9952/front_fr.4.400.jpg",
+    "ean": "4006040419952",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:organic",
+      "en:eu-organic",
+      "en:non-eu-agriculture",
+      "en:vegan",
+      "en:de-oko-006",
+      "en:eu-agriculture",
+      "en:eu-non-eu-agriculture",
+      "en:no-added-sugar"
+    ],
+    "suchwort": "müsli"
+  },
+  {
+    "name": "Basis Müsli 5-Kornmix",
+    "hersteller": "GUT Bio",
+    "weight": "750g",
+    "price": "10,66",
+    "kategorie": "Mueslis",
+    "img": "https://images.openfoodfacts.org/images/products/406/146/483/6297/front_de.3.400.jpg",
+    "ean": "4061464836297",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:organic",
+      "en:eu-organic",
+      "en:vegan",
+      "en:european-vegetarian-union",
+      "en:european-vegetarian-union-vegan",
+      "en:nutriscore",
+      "en:nutriscore-grade-a"
+    ],
+    "suchwort": "müsli"
+  },
+  {
     "name": "Toffifee 15er",
-    "description": "Storck. Toffifee 15er. Haselnuss (10 %) in Caramel (41 %) mit Nougatcreme (37 %) und Schokolade (12 %). Confectioneries. 125g.",
-    "price_cents": 1480,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/401/440/040/0007/front_en.638.400.jpg",
-    "attrs": {
-      "off_code": "4014400400007",
-      "search_term": "schokolade",
-      "category": "Confectioneries",
-      "quantity": "125g",
-      "bio": false
-    }
+    "hersteller": "Storck",
+    "weight": "125g",
+    "price": "12,36",
+    "kategorie": "Confectioneries",
+    "img": "https://images.openfoodfacts.org/images/products/401/440/040/0007/front_en.638.400.jpg",
+    "ean": "4014400400007",
+    "labels_tags": [],
+    "suchwort": "schokolade"
   },
   {
-    "partner": "edeka",
-    "brand": "fin CARRE",
     "name": "Dunkle Schokolade mit ganzen Haselnüssen",
-    "description": "fin CARRE. Dunkle Schokolade mit ganzen Haselnüssen. Barres chocolatées à la noix de coco. 3.5 oz. Sustainable farming, Fairtrade cocoa, Made in Germany, Max Havelaar, Triman.",
-    "price_cents": 548,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/000/002/081/5356/front_en.146.400.jpg",
-    "attrs": {
-      "off_code": "20815356",
-      "search_term": "schokolade",
-      "category": "Barres chocolatées à la noix de coco",
-      "quantity": "3.5 oz",
-      "bio": false
-    }
+    "hersteller": "fin CARRE",
+    "weight": "3.5 oz",
+    "price": "9,83",
+    "kategorie": "Barres chocolatées à la noix de coco",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/081/5356/front_en.146.400.jpg",
+    "ean": "20815356",
+    "labels_tags": [
+      "en:fair-trade",
+      "en:fairtrade-international",
+      "en:sustainable-farming",
+      "en:fairtrade-cocoa",
+      "en:made-in-germany",
+      "en:max-havelaar",
+      "fr:triman"
+    ],
+    "suchwort": "schokolade"
   },
   {
-    "partner": "edeka",
-    "brand": "fin CARRE",
     "name": "Haselnuss Schokolade",
-    "description": "fin CARRE. Haselnuss Schokolade. Milk chocolates with hazelnuts. 100g. Fairtrade cocoa, Green Dot, Max Havelaar, UTZ Certified Cocoa.",
-    "price_cents": 216,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/000/002/002/9838/front_en.115.400.jpg",
-    "attrs": {
-      "off_code": "20029838",
-      "search_term": "schokolade",
-      "category": "Milk chocolates with hazelnuts",
-      "quantity": "100g",
-      "bio": false
-    }
+    "hersteller": "fin CARRE",
+    "weight": "100g",
+    "price": "1,89",
+    "kategorie": "Milk chocolates with hazelnuts",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/002/9838/front_en.115.400.jpg",
+    "ean": "20029838",
+    "labels_tags": [
+      "en:fair-trade",
+      "en:fairtrade-international",
+      "en:sustainable-farming",
+      "en:fairtrade-cocoa",
+      "en:green-dot",
+      "en:max-havelaar",
+      "en:utz-certified",
+      "en:utz-certified-cocoa"
+    ],
+    "suchwort": "schokolade"
   },
   {
-    "partner": "edeka",
-    "brand": "Storck",
     "name": "Toffifee weiße Schokolade",
-    "description": "Storck. Toffifee weiße Schokolade. Bonbons. 125g. Green Dot, Limited edition.",
-    "price_cents": 1225,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/401/440/093/2959/front_en.111.400.jpg",
-    "attrs": {
-      "off_code": "4014400932959",
-      "search_term": "schokolade",
-      "category": "Bonbons",
-      "quantity": "125g",
-      "bio": false
-    }
+    "hersteller": "Storck",
+    "weight": "125g",
+    "price": "2,40",
+    "kategorie": "Bonbons",
+    "img": "https://images.openfoodfacts.org/images/products/401/440/093/2959/front_en.111.400.jpg",
+    "ean": "4014400932959",
+    "labels_tags": [
+      "en:green-dot",
+      "en:limited-edition"
+    ],
+    "suchwort": "schokolade"
   },
   {
-    "partner": "edeka",
-    "brand": "Fin carré",
     "name": "Dunkle Ganze Mandel",
-    "description": "Fin carré. Dunkle Ganze Mandel. Schokolade mit ganzen Mandeln. Dark chocolates with almonds. 200 g. Fairtrade cocoa, FSC Mix, Green Dot, Max Havelaar, Nutriscore Grade E, pure cocoa butter, UTZ Certified, Triman, Fsc-c-021442, Fsc-c021, fr:Fairtrade Max Havekaar Cacao, fr:Fairtrade-cocoa-programme.",
-    "price_cents": 663,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/000/002/048/1940/front_de.116.400.jpg",
-    "attrs": {
-      "off_code": "20481940",
-      "search_term": "schokolade",
-      "category": "Dark chocolates with almonds",
-      "quantity": "200 g",
-      "bio": false
-    }
+    "hersteller": "Fin carré",
+    "weight": "200 g",
+    "price": "6,01",
+    "kategorie": "Dark chocolates with almonds",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/048/1940/front_de.116.400.jpg",
+    "ean": "20481940",
+    "labels_tags": [
+      "en:fair-trade",
+      "en:fairtrade-international",
+      "en:sustainable-farming",
+      "en:fairtrade-cocoa",
+      "en:fsc",
+      "en:fsc-mix",
+      "en:green-dot",
+      "en:max-havelaar",
+      "en:nutriscore",
+      "en:nutriscore-grade-e",
+      "en:pure-cocoa-butter",
+      "en:utz-certified",
+      "fr:triman",
+      "en:Fsc-c-021442",
+      "en:Fsc-c021",
+      "fr:Fairtrade Max Havekaar Cacao",
+      "fr:Fairtrade-cocoa-programme"
+    ],
+    "suchwort": "schokolade"
   },
   {
-    "partner": "edeka",
-    "brand": "Eat Natural",
     "name": "Eat Natural Vegan - Erdnüsse, Kokos & dunkle Schokolade",
-    "description": "Eat Natural. Eat Natural Vegan - Erdnüsse, Kokos & dunkle Schokolade. Chocolate cereal bars. 3 x 40 g. No gluten, Vegan, FSC Mix.",
-    "price_cents": 1124,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/800/050/043/5618/front_de.37.400.jpg",
-    "attrs": {
-      "off_code": "8000500435618",
-      "search_term": "schokolade",
-      "category": "Chocolate cereal bars",
-      "quantity": "3 x 40 g",
-      "bio": false
-    }
+    "hersteller": "Eat Natural",
+    "weight": "3 x 40 g",
+    "price": "10,19",
+    "kategorie": "Chocolate cereal bars",
+    "img": "https://images.openfoodfacts.org/images/products/800/050/043/5618/front_de.37.400.jpg",
+    "ean": "8000500435618",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:no-gluten",
+      "en:vegan",
+      "en:fsc",
+      "en:fsc-mix"
+    ],
+    "suchwort": "schokolade"
   },
   {
-    "partner": "edeka",
-    "brand": "Favorina",
     "name": "Lebkuchen Hearts, Pretzels & Stars Zartbitter",
-    "description": "Favorina. Lebkuchen Hearts, Pretzels & Stars Zartbitter. Lebkuchem umhüllt mit 25% dunkler Schokolade. Biscuits. 500g. Vegan, Fairtrade cocoa, Green Dot, Made in Germany.",
-    "price_cents": 1062,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/000/002/015/4653/front_de.131.400.jpg",
-    "attrs": {
-      "off_code": "20154653",
-      "search_term": "schokolade",
-      "category": "Biscuits",
-      "quantity": "500g",
-      "bio": false
-    }
+    "hersteller": "Favorina",
+    "weight": "500g",
+    "price": "14,76",
+    "kategorie": "Biscuits",
+    "img": "https://images.openfoodfacts.org/images/products/000/002/015/4653/front_de.131.400.jpg",
+    "ean": "20154653",
+    "labels_tags": [
+      "en:vegetarian",
+      "en:fair-trade",
+      "en:vegan",
+      "en:fairtrade-cocoa",
+      "en:green-dot",
+      "en:made-in-germany"
+    ],
+    "suchwort": "schokolade"
   },
   {
-    "partner": "edeka",
-    "brand": "dmBio",
     "name": "Schoko Crunchy",
-    "description": "dmBio. Schoko Crunchy. Mueslis with chocolate. 500g. Fairtrade International.",
-    "price_cents": 752,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/406/779/600/0306/front_en.30.400.jpg",
-    "attrs": {
-      "off_code": "4067796000306",
-      "search_term": "schokolade",
-      "category": "Mueslis with chocolate",
-      "quantity": "500g",
-      "bio": false
-    }
+    "hersteller": "dmBio",
+    "weight": "500g",
+    "price": "14,09",
+    "kategorie": "Mueslis with chocolate",
+    "img": "https://images.openfoodfacts.org/images/products/406/779/600/0306/front_en.30.400.jpg",
+    "ean": "4067796000306",
+    "labels_tags": [
+      "en:fair-trade",
+      "en:fairtrade-international"
+    ],
+    "suchwort": "schokolade"
   },
   {
-    "partner": "edeka",
-    "brand": "Bon Gelati",
     "name": "Eis Mandel",
-    "description": "Bon Gelati. Eis Mandel. Vanilla ice cream bars coated with milk chocolate and almonds. 504g. Green Dot, Nutriscore Grade E, Rainforest Alliance Cocoa, Triman.",
-    "price_cents": 968,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/405/648/922/3368/front_en.42.400.jpg",
-    "attrs": {
-      "off_code": "4056489223368",
-      "search_term": "schokolade",
-      "category": "Vanilla ice cream bars coated with milk chocolate and almonds",
-      "quantity": "504g",
-      "bio": false
-    }
+    "hersteller": "Bon Gelati",
+    "weight": "504g",
+    "price": "1,82",
+    "kategorie": "Vanilla ice cream bars coated with milk chocolate and almonds",
+    "img": "https://images.openfoodfacts.org/images/products/405/648/922/3368/front_en.42.400.jpg",
+    "ean": "4056489223368",
+    "labels_tags": [
+      "en:green-dot",
+      "en:nutriscore",
+      "en:nutriscore-grade-e",
+      "en:rainforest-alliance",
+      "en:rainforest-alliance-cocoa",
+      "fr:triman"
+    ],
+    "suchwort": "schokolade"
   },
   {
-    "partner": "edeka",
-    "brand": "m&m's",
     "name": "Peanut",
-    "description": "m&m's. Peanut. Chocolate covered peanuts. 250g. Green Dot, Made in France.",
-    "price_cents": 638,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/401/110/000/5846/front_en.93.400.jpg",
-    "attrs": {
-      "off_code": "4011100005846",
-      "search_term": "schokolade",
-      "category": "Chocolate covered peanuts",
-      "quantity": "250g",
-      "bio": false
-    }
+    "hersteller": "m&m's",
+    "weight": "250g",
+    "price": "1,73",
+    "kategorie": "Chocolate covered peanuts",
+    "img": "https://images.openfoodfacts.org/images/products/401/110/000/5846/front_en.93.400.jpg",
+    "ean": "4011100005846",
+    "labels_tags": [
+      "en:green-dot",
+      "en:made-in-france"
+    ],
+    "suchwort": "schokolade"
   },
   {
-    "partner": "edeka",
-    "brand": "BON Gelati",
     "name": "Mini Mix Classic",
-    "description": "BON Gelati. Mini Mix Classic. Ice cream bars coated with chocolate. 432g. Fair trade, Do not freeze again, Rainforest Alliance Cocoa.",
-    "price_cents": 1296,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/405/648/922/3351/front_de.44.400.jpg",
-    "attrs": {
-      "off_code": "4056489223351",
-      "search_term": "schokolade",
-      "category": "Ice cream bars coated with chocolate",
-      "quantity": "432g",
-      "bio": false
-    }
+    "hersteller": "BON Gelati",
+    "weight": "432g",
+    "price": "14,85",
+    "kategorie": "Ice cream bars coated with chocolate",
+    "img": "https://images.openfoodfacts.org/images/products/405/648/922/3351/front_de.44.400.jpg",
+    "ean": "4056489223351",
+    "labels_tags": [
+      "en:fair-trade",
+      "en:do-not-freeze-again",
+      "en:rainforest-alliance",
+      "en:rainforest-alliance-cocoa"
+    ],
+    "suchwort": "schokolade"
   },
   {
-    "partner": "edeka",
-    "brand": "Corny",
     "name": "Corny Free Schoko",
-    "description": "Corny. Corny Free Schoko. Chocolate candies. 120g. No preservatives, No added sugar, Rainforest Alliance.",
-    "price_cents": 198,
-    "currency": "EUR",
-    "image_url": "https://images.openfoodfacts.org/images/products/401/180/057/1214/front_de.184.400.jpg",
-    "attrs": {
-      "off_code": "4011800571214",
-      "search_term": "schokolade",
-      "category": "Chocolate candies",
-      "quantity": "120g",
-      "bio": false
-    }
+    "hersteller": "Corny",
+    "weight": "120g",
+    "price": "6,83",
+    "kategorie": "Chocolate candies",
+    "img": "https://images.openfoodfacts.org/images/products/401/180/057/1214/front_de.184.400.jpg",
+    "ean": "4011800571214",
+    "labels_tags": [
+      "en:no-preservatives",
+      "en:no-added-sugar",
+      "en:rainforest-alliance"
+    ],
+    "suchwort": "schokolade"
+  },
+  {
+    "name": "Schoko Müsli",
+    "hersteller": "Crownfield",
+    "weight": "750g",
+    "price": "13,74",
+    "kategorie": "Mueslis with chocolate",
+    "img": "https://images.openfoodfacts.org/images/products/405/648/925/5499/front_en.78.400.jpg",
+    "ean": "4056489255499",
+    "labels_tags": [
+      "en:sustainable",
+      "en:source-of-fibre",
+      "en:sustainable-palm-oil",
+      "en:fsc",
+      "en:fsc-mix",
+      "en:high-fibres",
+      "en:nutriscore",
+      "en:nutriscore-grade-c",
+      "en:rainforest-alliance",
+      "en:rainforest-alliance-cocoa",
+      "en:roundtable-on-sustainable-palm-oil"
+    ],
+    "suchwort": "schokolade"
+  },
+  {
+    "name": "Puffreis mit Schokolade",
+    "hersteller": "kosta",
+    "weight": "200g",
+    "price": "12,32",
+    "kategorie": "Milk chocolate biscuits",
+    "img": "https://images.openfoodfacts.org/images/products/402/170/090/0021/front_en.105.400.jpg",
+    "ean": "4021700900021",
+    "labels_tags": [
+      "fr:tidy-man",
+      "fr:triman"
+    ],
+    "suchwort": "schokolade"
+  },
+  {
+    "name": "Goldhase Vollmilch",
+    "hersteller": "Lindt",
+    "weight": "100g",
+    "price": "14,44",
+    "kategorie": "Confectioneries",
+    "img": "https://images.openfoodfacts.org/images/products/400/053/967/1104/front_en.113.400.jpg",
+    "ean": "4000539671104",
+    "labels_tags": [
+      "fr:triman"
+    ],
+    "suchwort": "schokolade"
   }
 ]

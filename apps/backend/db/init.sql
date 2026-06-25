@@ -20,9 +20,11 @@ CREATE TABLE IF NOT EXISTS brands (
 CREATE UNIQUE INDEX IF NOT EXISTS ix_brands_partner_name ON brands (partner_id, name);
 
 -- ── products ─────────────────────────────────────────────────────────
--- Shared columns drive cross-partner search; partner-specific fields live in
--- the JSONB `attrs`. `embedding` is the semantic vector; `search_tsv` is a
--- generated full-text column (German config) for the keyword half of hybrid search.
+-- Shared columns drive cross-partner search. `tags` (organic/vegan…) and the
+-- normalized `weight_g`/`volume_ml` are extracted at ingestion so they are directly
+-- filterable/rankable; rare partner-specific extras live in JSONB `attrs`.
+-- `embedding` is the semantic vector; `search_tsv` is a generated full-text column
+-- (German config) for the keyword half of hybrid search.
 CREATE TABLE IF NOT EXISTS products (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     partner_id  UUID NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
@@ -32,6 +34,9 @@ CREATE TABLE IF NOT EXISTS products (
     price_cents INTEGER NOT NULL,
     currency    VARCHAR(3) NOT NULL DEFAULT 'EUR',
     image_url   VARCHAR(1024),
+    tags        TEXT[] NOT NULL DEFAULT '{}',
+    weight_g    INTEGER,
+    volume_ml   INTEGER,
     attrs       JSONB NOT NULL DEFAULT '{}'::jsonb,
     embedding   VECTOR(384),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -42,6 +47,7 @@ CREATE TABLE IF NOT EXISTS products (
 
 CREATE INDEX IF NOT EXISTS ix_products_partner    ON products (partner_id);
 CREATE INDEX IF NOT EXISTS ix_products_brand      ON products (brand_id);
+CREATE INDEX IF NOT EXISTS ix_products_tags_gin   ON products USING gin (tags);
 CREATE INDEX IF NOT EXISTS ix_products_attrs_gin  ON products USING gin (attrs);
 CREATE INDEX IF NOT EXISTS ix_products_search_tsv ON products USING gin (search_tsv);
 

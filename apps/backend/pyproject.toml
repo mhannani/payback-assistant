@@ -4,8 +4,10 @@ version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "asyncpg>=0.31.0",
+    "babel>=2.18.0",
     "fastapi>=0.138.0",
     "pgvector>=0.4.2",
+    "pint>=0.25.3",
     "pydantic-settings>=2.14.2",
     "sqlalchemy[asyncio]>=2.0.51",
     "uvicorn[standard]>=0.49.0",
@@ -15,9 +17,12 @@ dependencies = [
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.1.1",
+    "pytest-asyncio>=1.0",
     "ruff>=0.15.19",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+# Run `async def test_*` directly (the retrieval/embed tests run real SQL on Postgres).
+asyncio_mode = "auto"
