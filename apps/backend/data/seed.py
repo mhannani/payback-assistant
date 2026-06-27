@@ -70,7 +70,7 @@ async def seed() -> int:
 
 async def _main() -> None:
     count = await seed()
-    print(f"Seeded {count} products.")
+    print(f"Seeded {count} products. Run `make embed` to make them searchable.")
     await engine.dispose()
 
 

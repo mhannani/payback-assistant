@@ -121,10 +121,14 @@ class Product(Base):
     # Rare partner-specific extras that aren't filtered/ranked on (source id, rating…).
     attrs: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
 
-    # Semantic embedding of name + description (set at seed time).
+    # Semantic embedding of name + description (computed by `make embed`).
     embedding: Mapped[list[float] | None] = mapped_column(
         Vector(EMBEDDING_DIM), nullable=True
     )
+    # Which embedder produced `embedding` (e.g. 'local:paraphrase-multilingual-MiniLM-L12-v2').
+    # Vectors from different models aren't comparable, so this lets the embed step
+    # re-embed when the provider changes and lets retrieval reject a stale mismatch.
+    embedding_model: Mapped[str | None] = mapped_column(String(120), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

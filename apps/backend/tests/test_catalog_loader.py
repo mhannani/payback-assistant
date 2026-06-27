@@ -26,3 +26,21 @@ def test_amazon_catalog_is_long_tail_merchandise() -> None:
     amazon = load_catalog(PartnerSlug.AMAZON)
     # Each curated Amazon item keeps its ASIN (as source_id) + a category path.
     assert all({"source_id", "category_path"} <= r["attrs"].keys() for r in amazon)
+
+
+def test_same_product_sold_by_multiple_partners_at_different_prices() -> None:
+    # A Barilla spaghetti exists in both EDEKA and Amazon — the catalog must let
+    # retrieval surface the cheaper partner for the same product.
+    def barilla_spaghetti_prices(partner: PartnerSlug) -> list[int]:
+        return [
+            r["price_cents"]
+            for r in load_catalog(partner)
+            if r["brand"] == "Barilla" and "spaghetti" in r["name"].lower()
+        ]
+
+    edeka_prices = barilla_spaghetti_prices(PartnerSlug.EDEKA)
+    amazon_prices = barilla_spaghetti_prices(PartnerSlug.AMAZON)
+    assert edeka_prices, "expected a Barilla spaghetti in EDEKA"
+    assert amazon_prices, "expected a Barilla spaghetti in Amazon"
+    # Different partners price the same product differently — the point of the demo.
+    assert set(edeka_prices) != set(amazon_prices)

@@ -39,6 +39,9 @@ CREATE TABLE IF NOT EXISTS products (
     volume_ml   INTEGER,
     attrs       JSONB NOT NULL DEFAULT '{}'::jsonb,
     embedding   VECTOR(384),
+    -- Which embedder produced `embedding`; lets the embed step re-embed on a
+    -- provider switch and lets retrieval reject a stale-model mismatch.
+    embedding_model VARCHAR(120),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     search_tsv  TSVECTOR GENERATED ALWAYS AS (
         to_tsvector('german', coalesce(name, '') || ' ' || coalesce(description, ''))

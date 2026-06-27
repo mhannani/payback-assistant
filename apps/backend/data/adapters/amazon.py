@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from app.shared.partner import PartnerSlug
 from data.adapters.base import PartnerAdapter
-from data.adapters.normalize import euros_to_cents
+from data.adapters.normalize import compose_description, euros_to_cents
 from data.schema import ProductRecord, RawRecord
 
 
@@ -30,7 +30,7 @@ class AmazonAdapter(PartnerAdapter):
             partner=self.partner,
             brand=brand,
             name=name[:255],
-            description=_describe(brand, name, blurb, category_path),
+            description=compose_description(brand, name, blurb, category_path),
             # Catalog prices are quoted in EUR for this project; list_price is a plain amount.
             price_cents=euros_to_cents(raw["list_price"]),
             currency="EUR",
@@ -40,8 +40,3 @@ class AmazonAdapter(PartnerAdapter):
             volume_ml=None,
             attrs=attrs,
         )
-
-
-def _describe(brand: str | None, name: str, blurb: str | None, category_path: str | None) -> str:
-    parts = [p for p in (brand, name, blurb, category_path) if p]
-    return ". ".join(parts) + "."

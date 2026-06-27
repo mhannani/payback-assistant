@@ -8,7 +8,12 @@ from __future__ import annotations
 
 from app.shared.partner import PartnerSlug
 from data.adapters.base import PartnerAdapter
-from data.adapters.normalize import euros_to_cents, normalize_tags, parse_quantity
+from data.adapters.normalize import (
+    compose_description,
+    euros_to_cents,
+    normalize_tags,
+    parse_quantity,
+)
 from data.schema import ProductRecord, RawRecord
 
 
@@ -29,7 +34,7 @@ class DmAdapter(PartnerAdapter):
             partner=self.partner,
             brand=brand,
             name=name[:255],
-            description=_describe(brand, name, category, raw.get("pack_size")),
+            description=compose_description(brand, name, category, raw.get("pack_size")),
             price_cents=euros_to_cents(raw["price_eur"]),
             currency="EUR",
             image_url=raw.get("bild_url"),
@@ -38,9 +43,3 @@ class DmAdapter(PartnerAdapter):
             volume_ml=volume_ml,
             attrs=attrs,
         )
-
-
-def _describe(brand: str | None, name: str, category: str | None, size: str | None) -> str:
-    """Compose one description string for the embedder/full-text index."""
-    parts = [p for p in (brand, name, category, size) if p]
-    return ". ".join(parts) + "."

@@ -9,7 +9,12 @@ from __future__ import annotations
 
 from app.shared.partner import PartnerSlug
 from data.adapters.base import PartnerAdapter
-from data.adapters.normalize import german_price_to_cents, normalize_tags, parse_quantity
+from data.adapters.normalize import (
+    compose_description,
+    german_price_to_cents,
+    normalize_tags,
+    parse_quantity,
+)
 from data.schema import ProductRecord, RawRecord
 
 
@@ -30,7 +35,7 @@ class EdekaAdapter(PartnerAdapter):
             partner=self.partner,
             brand=brand,
             name=name[:255],
-            description=_describe(brand, name, category, raw.get("weight")),
+            description=compose_description(brand, name, category, raw.get("weight")),
             price_cents=german_price_to_cents(raw["price"]),
             currency="EUR",
             image_url=raw.get("img"),
@@ -39,8 +44,3 @@ class EdekaAdapter(PartnerAdapter):
             volume_ml=volume_ml,
             attrs=attrs,
         )
-
-
-def _describe(brand: str | None, name: str, category: str | None, size: str | None) -> str:
-    parts = [p for p in (brand, name, category, size) if p]
-    return ". ".join(parts) + "."

@@ -58,6 +58,8 @@ def test_parse_quantity(text: str | None, expected: tuple[int | None, int | None
 def test_normalize_tags() -> None:
     assert normalize_tags(["en:organic", "en:vegan"]) == ["organic", "vegan"]
     assert normalize_tags(["en:organic", "fr:bio", "en:organic"]) == ["organic"]  # en-only, de-duped
+    # Marketing / packaging noise is dropped; only canonical dietary tags survive.
+    assert normalize_tags(["en:organic", "en:green-dot", "en:nutriscore-grade-a"]) == ["organic"]
     assert normalize_tags(None) == []
 
 

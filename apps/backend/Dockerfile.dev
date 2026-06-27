@@ -13,10 +13,22 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 WORKDIR /app
 
+# Cache the embedding model inside the image so seeding/serving never download it
+# at runtime (the local embedder is the default and must work offline).
+ENV HF_HOME=/opt/hf-cache \
+    EMBEDDING_MODEL_NAME=paraphrase-multilingual-MiniLM-L12-v2
+
 # Install all dependencies (including dev) first — cached unless the lock changes.
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project
+
+# Bake the embedding model into the image (downloaded once, into HF_HOME above).
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('$EMBEDDING_MODEL_NAME')"
+
+# After the model is cached, force offline so no code path reaches the network for it.
+ENV HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
 
 # Copy the whole backend (app + data + tests) for an interactive dev container.
 COPY . /app/

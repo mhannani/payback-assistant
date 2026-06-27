@@ -6,7 +6,6 @@ rest of the code depends on typed attributes rather than raw ``os.environ``.
 
 from functools import lru_cache
 
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,8 +21,18 @@ class Settings(BaseSettings):
     postgres_user: str = "payback"
     postgres_password: str = "payback"
 
-    # Dimensionality of the product/query embedding vectors.
-    embedding_dim: int = Field(default=384)
+    # ── Embeddings ──────────────────────────────────────────────────
+    # Which embedder serves vectors. 'local' (default) runs an offline
+    # multilingual model so the service needs no credentials; 'vertex' / 'openai'
+    # serve from those clouds (real impls, used only when configured).
+    embedding_provider: str = "local"
+    embedding_model_name: str = "paraphrase-multilingual-MiniLM-L12-v2"
+    # Cloud embedder settings — only read by the matching provider.
+    vertex_project: str | None = None
+    vertex_location: str = "europe-west3"
+    vertex_model: str = "text-multilingual-embedding-002"
+    openai_api_key: str | None = None
+    openai_model: str = "text-embedding-3-small"
 
     @property
     def database_url(self) -> str:

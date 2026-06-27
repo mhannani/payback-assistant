@@ -62,16 +62,52 @@ def parse_quantity(text: str | None) -> tuple[int | None, int | None]:
     return None, None
 
 
-def normalize_tags(labels_tags: list[str] | None) -> list[str]:
-    """Open Food Facts canonical tags → clean tag list.
+# The dietary attributes a shopper actually filters or asks about ("do you prefer
+# organic?"). Open Food Facts emits hundreds of label tags — most are packaging or
+# marketing noise (green-dot, eco-emballages, fsc-mix, 1-for-the-planet, nutriscore-*,
+# made-in-*). We keep only this curated set so `tags` stays a clean, queryable signal.
+_CANONICAL_TAGS = frozenset(
+    {
+        "organic",
+        "vegan",
+        "vegetarian",
+        "gluten-free",
+        "no-gluten",
+        "lactose-free",
+        "no-lactose",
+        "palm-oil-free",
+        "no-added-sugar",
+        "sugar-free",
+        "fair-trade",
+        "halal",
+        "kosher",
+    }
+)
 
-    'en:organic' → 'organic'. Keeps only the English-namespaced tags (OFF mixes in
-    other languages) and de-duplicates while preserving order.
+
+def normalize_tags(labels_tags: list[str] | None) -> list[str]:
+    """Open Food Facts label tags → clean, canonical dietary tags.
+
+    'en:organic' → 'organic'. Strips the language prefix, keeps only the curated
+    dietary attributes (dropping packaging/marketing noise), and de-duplicates while
+    preserving order.
     """
     if not labels_tags:
         return []
     seen: dict[str, None] = {}
     for tag in labels_tags:
         if tag.startswith("en:"):
-            seen.setdefault(tag[3:], None)
+            name = tag[3:].lower()
+            if name in _CANONICAL_TAGS:
+                seen.setdefault(name, None)
     return list(seen)
+
+
+def compose_description(*parts: str | None) -> str:
+    """Join the present fragments into one description for the embedder / FT index.
+
+    e.g. compose_description(brand, name, category, size). Empty/None parts are
+    dropped; the result ends with a period for clean sentence-like text.
+    """
+    present = [part for part in parts if part]
+    return ". ".join(present) + "."

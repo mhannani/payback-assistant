@@ -35,6 +35,9 @@ fetch: ## Refresh the Open Food Facts catalog snapshot (needs network)
 seed: ## Load the committed catalog snapshots into the database
 	$(EXEC_API) python -m data.seed
 
+embed: ## Compute embeddings for products (run after seed; idempotent)
+	$(EXEC_API) python -m data.embed
+
 test: ## Run the test suite
 	$(EXEC_API) python -m pytest
 

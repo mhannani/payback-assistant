@@ -98,5 +98,165 @@
     "category_path": "Electronics > Accessories > Cables",
     "image": "https://picsum.photos/seed/amazon-cable/400/400",
     "blurb": "Two-pack of 2m braided USB-C to USB-C fast-charging cables, 100W."
+  },
+  {
+    "product_name": "Logitech M720 Triathlon kabellose Maus / wireless mouse",
+    "brand": "Logitech",
+    "asin": "B01MY7GR24",
+    "rating": 4.6,
+    "list_price": 44.99,
+    "category_path": "Electronics > Computers > Mice",
+    "image": "https://picsum.photos/seed/amazon-mouse/400/400",
+    "blurb": "Multi-device wireless mouse with hyper-fast scrolling and 2-year battery."
+  },
+  {
+    "product_name": "Anker PowerCore 10000 Powerbank / portable charger",
+    "brand": "Anker",
+    "asin": "B0194WDVHI",
+    "rating": 4.7,
+    "list_price": 25.99,
+    "category_path": "Electronics > Power > Power Banks",
+    "image": "https://picsum.photos/seed/amazon-powerbank/400/400",
+    "blurb": "Compact 10000mAh power bank with PowerIQ fast charging for phones and tablets."
+  },
+  {
+    "product_name": "Echo Dot (5. Generation) smarter Lautsprecher / smart speaker",
+    "brand": "Amazon",
+    "asin": "B09B8V1LZ3",
+    "rating": 4.7,
+    "list_price": 59.99,
+    "category_path": "Electronics > Smart Home > Speakers",
+    "image": "https://picsum.photos/seed/amazon-echodot/400/400",
+    "blurb": "Compact smart speaker with Alexa, improved audio and a built-in temperature sensor."
+  },
+  {
+    "product_name": "Fire TV Stick 4K Streaming-Stick / streaming device",
+    "brand": "Amazon",
+    "asin": "B08XVYZ1Y5",
+    "rating": 4.6,
+    "list_price": 44.99,
+    "category_path": "Electronics > TV & Video > Streaming",
+    "image": "https://picsum.photos/seed/amazon-firestick/400/400",
+    "blurb": "4K Ultra HD streaming stick with Wi-Fi 6 and Alexa voice remote."
+  },
+  {
+    "product_name": "Kindle Paperwhite 6,8 Zoll E-Reader / e-reader",
+    "brand": "Amazon",
+    "asin": "B08KTZ8249",
+    "rating": 4.8,
+    "list_price": 149.99,
+    "category_path": "Electronics > E-Readers",
+    "image": "https://picsum.photos/seed/amazon-kindle/400/400",
+    "blurb": "6.8-inch glare-free e-reader with adjustable warm light and weeks of battery."
+  },
+  {
+    "product_name": "SanDisk Ultra 128GB microSD Speicherkarte / memory card",
+    "brand": "SanDisk",
+    "asin": "B073K14CVB",
+    "rating": 4.8,
+    "list_price": 17.99,
+    "category_path": "Electronics > Storage > Memory Cards",
+    "image": "https://picsum.photos/seed/amazon-sdcard/400/400",
+    "blurb": "128GB microSDXC card with up to 140 MB/s read speed for phones and cameras."
+  },
+  {
+    "product_name": "WMF Profi Plus Küchenmesser-Set 3-teilig / knife set",
+    "brand": "WMF",
+    "asin": "B00BEUC8O6",
+    "rating": 4.7,
+    "list_price": 39.99,
+    "category_path": "Home > Kitchen > Knives",
+    "image": "https://picsum.photos/seed/amazon-knifeset/400/400",
+    "blurb": "Three-piece stainless steel knife set with chef's, utility and paring knives."
+  },
+  {
+    "product_name": "Bodum Chambord French Press 1L / coffee maker",
+    "brand": "Bodum",
+    "asin": "B00008XEU0",
+    "rating": 4.6,
+    "list_price": 29.99,
+    "category_path": "Home > Kitchen > Coffee",
+    "image": "https://picsum.photos/seed/amazon-frenchpress/400/400",
+    "blurb": "1L classic French press with stainless steel frame and heat-resistant glass."
+  },
+  {
+    "product_name": "Hama Schreibtischlampe LED dimmbar / desk organizer lamp",
+    "brand": "Hama",
+    "asin": "B07VHFKDDV",
+    "rating": 4.3,
+    "list_price": 22.49,
+    "category_path": "Office > Lighting",
+    "image": "https://picsum.photos/seed/amazon-officelamp/400/400",
+    "blurb": "Dimmable LED office lamp with USB charging port and flexible arm."
+  },
+  {
+    "product_name": "Leuchtturm1917 Notizbuch A5 dotted / notebook",
+    "brand": "Leuchtturm1917",
+    "asin": "B002TSIO6C",
+    "rating": 4.8,
+    "list_price": 19.95,
+    "category_path": "Office > Stationery > Notebooks",
+    "image": "https://picsum.photos/seed/amazon-notebook/400/400",
+    "blurb": "A5 hardcover dotted notebook with numbered pages and an index."
+  },
+  {
+    "product_name": "Gardena Comfort Gartenschlauch 20m / garden hose",
+    "brand": "Gardena",
+    "asin": "B0001H51QU",
+    "rating": 4.6,
+    "list_price": 49.99,
+    "category_path": "Garden > Watering",
+    "image": "https://picsum.photos/seed/amazon-hose/400/400",
+    "blurb": "20m kink-resistant garden hose with reinforced fabric and UV protection."
+  },
+  {
+    "product_name": "Bosch IXO Akkuschrauber / cordless screwdriver",
+    "brand": "Bosch",
+    "asin": "B07RGXJWS6",
+    "rating": 4.7,
+    "list_price": 39.95,
+    "category_path": "Tools > Power Tools",
+    "image": "https://picsum.photos/seed/amazon-screwdriver/400/400",
+    "blurb": "Compact 3.6V cordless screwdriver with USB charging and bit set."
+  },
+  {
+    "product_name": "TRESKO Hanteln-Set verstellbar 20kg / adjustable dumbbells",
+    "brand": "TRESKO",
+    "asin": "B07Q4N9V8L",
+    "rating": 4.4,
+    "list_price": 54.95,
+    "category_path": "Sports > Fitness > Weights",
+    "image": "https://picsum.photos/seed/amazon-dumbbells/400/400",
+    "blurb": "Adjustable dumbbell set up to 20kg with rubber-coated plates and storage case."
+  },
+  {
+    "product_name": "Trixie Katzen-Kratzbaum 100cm / cat scratching tree",
+    "brand": "Trixie",
+    "asin": "B0035FZJHK",
+    "rating": 4.5,
+    "list_price": 34.99,
+    "category_path": "Pet Supplies > Cats > Furniture",
+    "image": "https://picsum.photos/seed/amazon-scratchtree/400/400",
+    "blurb": "100cm cat scratching tree with plush platforms and sisal-wrapped posts."
+  },
+  {
+    "product_name": "Barilla Spaghetti N° 5 500g / dried pasta",
+    "brand": "Barilla",
+    "asin": "B007GH4MWO",
+    "rating": 4.8,
+    "list_price": 2.79,
+    "category_path": "Grocery > Pasta",
+    "image": "https://picsum.photos/seed/amazon-barilla/400/400",
+    "blurb": "Classic Italian durum wheat spaghetti N° 5, 500g pack (pack of 1)."
+  },
+  {
+    "product_name": "Lavazza Qualità Rossa Kaffeebohnen 1kg / coffee beans",
+    "brand": "Lavazza",
+    "asin": "B007W5SK56",
+    "rating": 4.7,
+    "list_price": 11.49,
+    "category_path": "Grocery > Coffee",
+    "image": "https://picsum.photos/seed/amazon-lavazza/400/400",
+    "blurb": "1kg whole coffee beans, medium roast with notes of chocolate and dried fruit."
   }
 ]
