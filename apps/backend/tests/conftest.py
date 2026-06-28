@@ -12,11 +12,13 @@ from collections.abc import AsyncIterator, Iterator
 
 import pytest
 import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.config import get_settings
 from app.embeddings import Embedder, get_embedder
+from app.main import app
 
 
 @pytest_asyncio.fixture
@@ -41,6 +43,32 @@ async def db_session() -> AsyncIterator[AsyncSession]:
                 await txn.rollback()
     finally:
         await test_engine.dispose()
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def _dispose_app_engine() -> AsyncIterator[None]:
+    """Dispose the app's module-level engine at session end.
+
+    Under the shared session loop the app engine pools connections on that loop; disposing
+    it within the loop avoids "Event loop is closed" warnings during interpreter shutdown.
+    """
+    yield
+    from app.db.session import engine
+
+    await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def api_client() -> AsyncIterator[AsyncClient]:
+    """An async HTTP client for the app, run in-process via ASGI.
+
+    The app's async DB engine is pooled and can't be shared across event loops, so the
+    endpoints are exercised with httpx's AsyncClient (one event loop) rather than the sync
+    TestClient (which spins a fresh loop per request and trips "event loop is closed").
+    """
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
 
 
 @pytest.fixture(scope="session")

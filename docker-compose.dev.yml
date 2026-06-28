@@ -2,10 +2,7 @@ services:
   db:
     image: pgvector/pgvector:pg16
     container_name: payback_db
-    environment:
-      POSTGRES_DB: payback
-      POSTGRES_USER: payback
-      POSTGRES_PASSWORD: payback
+    env_file: .env.dev    # POSTGRES_* live in one place (see .env.example)
     ports:
       - "5433:5432"           # host 5433 to avoid clashing with a local Postgres
     volumes:
@@ -28,13 +25,9 @@ services:
       - "8000:8000"
     volumes:
       - ./apps/backend/app:/app/app   # live reload during development
+    env_file: .env.dev    # all app config in one place (see .env.example for the options)
     environment:
-      APP_ENV: development
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: payback
-      POSTGRES_USER: payback
-      POSTGRES_PASSWORD: payback
+      POSTGRES_HOST: db   # in-network DB host; overrides the .env.dev value for compose
     depends_on:
       db:
         condition: service_healthy
