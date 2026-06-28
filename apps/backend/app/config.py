@@ -49,11 +49,31 @@ class Settings(BaseSettings):
     # the vector arm's tail (cut by filter_ceiling) does. 0.0 keeps every @@-match.
     fulltext_min_rank: float = 0.0
 
+    # ── Intent agent LLM ────────────────────────────────────────────
+    # The agent classifies a query through an LLM reached via a LiteLLM gateway.
+    # `llm_model` is a LiteLLM model id; LiteLLM reads the matching provider
+    # credentials from the environment (OPENAI_API_KEY here). Switching to
+    # 'vertex_ai/gemini-2.0-flash', 'anthropic/claude-...', etc. is a one-line change.
+    llm_model: str = "openai/gpt-4o-mini"
+    llm_temperature: float = 0.0  # classification is deterministic, not creative
+
     @property
     def database_url(self) -> str:
         """Async SQLAlchemy DSN built from the discrete Postgres settings."""
         return (
             f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
+            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        )
+
+    @property
+    def checkpoint_db_url(self) -> str:
+        """Plain libpq DSN for the LangGraph Postgres checkpointer.
+
+        LangGraph's checkpointer talks to Postgres through psycopg, not SQLAlchemy, so it needs
+        the standard ``postgresql://`` URL — not the ``+asyncpg`` driver form above.
+        """
+        return (
+            f"postgresql://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
 

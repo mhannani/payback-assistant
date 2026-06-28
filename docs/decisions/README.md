@@ -10,3 +10,4 @@ its consequences — with references where external sources informed it.
 | [0003](0003-pgvector-with-retriever-interface.md) | pgvector for the demo behind a `Retriever` interface; BigQuery as the documented production path | Accepted |
 | [0004](0004-provider-agnostic-embeddings.md) | Provider-agnostic embeddings (local default, Vertex/OpenAI swappable) | Accepted |
 | [0005](0005-candidate-filtering.md) | Candidate filtering: cut the vector noise tail before fusion (absolute distance ceiling) | Accepted |
+| [0006](0006-intent-agent-langgraph.md) | Intent agent as a LangGraph state machine (LiteLLM gateway, durable Postgres checkpointer) | Accepted |

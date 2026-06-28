@@ -19,7 +19,7 @@ they render in any Markdown viewer.
   ┌──────────┐                 ┌────────────────────┐
   │ dm.json  │──┐              │ Partner adapters   │          ┌─────────────────────────┐
   ├──────────┤  │   raw        │  Babel → cents     │          │ client / curl /         │
-  │edeka.json│──┼──────────▶   │  Pint  → g · ml    │          │ future intent agent     │
+  │edeka.json│──┼──────────▶   │  Pint  → g · ml    │          │ client / intent agent   │
   ├──────────┤  │   records    │  labels → tags[]   │          └────────────┬────────────┘
   │amazon.jsn│──┘              └─────────┬──────────┘                       │
   └──────────┘                           │ canonical Product               ▼
@@ -181,20 +181,52 @@ to its score scale, fused by RRF, then a pluggable fair ranker.
 
 ---
 
-## 6. The seams (where Tasks 2 & 3 plug in)
+## 6. The intent agent (in front of retrieval)
 
-Each pluggable concern is an **ABC + concrete impls + a factory** selected by one env var — so a new
-strategy or backend is a new class, never an edit to the pipeline.
+A LangGraph state machine sits in front of `/search`: it classifies the raw query (LLM, via a
+LiteLLM gateway), picks the next action, and returns products, a clarifying question, or a
+partner hand-off. Per-conversation state is persisted in Postgres so a paused clarify survives a
+restart.
 
 ```text
-  Built (Task 1, default)        Config-swappable / documented seam        Env var
+  POST /assist {query}
+        │
+        ▼
+   ┌─────────┐   LLM: with_structured_output(Classification)
+   │ classify│   → intent · language · partner · sort · tags · search_query
+   └────┬────┘   then decide_action(...)
+        │
+   ┌────┴───────────────┬─────────────────────────┐
+   ▼                    ▼                          ▼
+ search               route_to_partner          clarify
+ (run retriever)      (deep-link hand-off)       interrupt(question) ──► pause
+   │  hits? │ none       │                          │ /assist/resume {thread_id, answer}
+   ▼        ▼            ▼                          ▼
+ products  clarify     route response            (answer) ──► back to classify
+   └────────┴────────────┴──────────────────────────┘
+        ▼
+  AssistResponse = products | clarify | route   (durable state: AsyncPostgresSaver)
+```
+
+The agent only *chooses* the mechanical knobs (partner / sort / tags) and calls the same retriever
+the `/search` endpoint uses — retrieval stays a pure primitive (see §5). Full rationale:
+[decisions/0006](decisions/0006-intent-agent-langgraph.md).
+
+---
+
+## 7. The seams (where the cloud-deploy task plugs in)
+
+Each pluggable concern is an **interface + concrete impls + a factory** selected by one env var — so a
+new strategy, provider, or backend is a new class, never an edit to the pipeline.
+
+```text
+  Built (default)                Config-swappable / documented seam        Env var
   ───────────────────────        ──────────────────────────────────       ─────────────────
+  Agent LLM: openai/gpt-4o-mini  any LiteLLM model (Vertex, Anthropic…)    LLM_MODEL
   Embedder : Local        ◀───▶  Vertex · OpenAI                           EMBEDDING_PROVIDER
-  Retriever: PgVector     ◀───▶  warehouse backend e.g. BigQuery (Task 3)  RETRIEVER_BACKEND
+  Retriever: PgVector     ◀───▶  warehouse backend e.g. BigQuery           RETRIEVER_BACKEND
   Filter   : absolute     ◀───▶  autocut · relative · none                 FILTER_STRATEGY
   Ranker   : constrained  ◀───▶  mmr · zscore                              RANKING_STRATEGY
-
-  Intent agent → /assist (Task 2): maps natural-language intent onto the /search knobs above.
 ```
 
 Because the strategies are swappable, they're **measurable**: `make eval` scores every *filter ×

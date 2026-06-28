@@ -53,6 +53,7 @@ Everything runs offline on a local Docker stack — no API keys required.
 - [Status](#status)
 - [Data model & ingestion](#data-model--ingestion)
 - [Retrieval](#retrieval)
+- [Intent agent](#intent-agent)
 - [API](#api)
 - [Running locally](#running-locally)
 - [Evaluation & strategy configuration](#evaluation--strategy-configuration)
@@ -68,13 +69,13 @@ Everything runs offline on a local Docker stack — no API keys required.
 
 | Task | Status |
 |---|---|
-| 1 — Recommendation engine | ✅ Done — ingestion adapters, embeddings, hybrid retrieval, fair cross-partner ranking, `/search`, 96 tests, eval harness |
-| 2 — Intent agent | ◻️ Not started — `/search` exposes the partner / tags / sort knobs an agent maps intent onto |
-| 3 — Cloud deployment | ◻️ Not started — runs on Docker now; embedder and vector store are config-switchable for GCP |
+| 1 — Recommendation engine | ✅ Done — ingestion adapters, embeddings, hybrid retrieval, fair cross-partner ranking, `/search`, eval harness |
+| 2 — Intent agent | ✅ Done — LangGraph agent: intent + language classification → search / clarify / route, durable clarify/resume, `/assist` |
+| 3 — Cloud deployment | ◻️ Not started — runs on Docker now; LLM, embedder, and vector store are config-switchable for GCP |
 
 `/search` is a retrieval primitive: it does not parse intent from the query (it won't read "cheap" from
-*günstige*). Intent classification and the clarifying-question branch sit in the agent layer, which calls
-`/search`. Keeping that boundary explicit is what lets retrieval be tested on its own.
+*günstige*). Intent classification and the clarifying-question branch live in the **intent agent** (Task 2,
+`/assist`), which calls `/search`. Keeping that boundary explicit is what lets retrieval be tested on its own.
 
 ---
 
@@ -216,6 +217,31 @@ Each decision, with alternatives, is an ADR:
 | [0003](docs/decisions/0003-pgvector-with-retriever-interface.md) | pgvector behind a `Retriever` interface; warehouse as the production path |
 | [0004](docs/decisions/0004-provider-agnostic-embeddings.md) | Provider-agnostic embeddings |
 | [0005](docs/decisions/0005-candidate-filtering.md) | Candidate filtering to cut the vector noise tail |
+| [0006](docs/decisions/0006-intent-agent-langgraph.md) | Intent agent as a LangGraph state machine |
+
+---
+
+## Intent agent
+
+The agent turns a raw query into an action. It is a **LangGraph** state machine: an LLM classifies
+intent and language, a small policy picks the next action, and the agent returns a structured
+response — products, a clarifying question, or a hand-off to a partner's own search.
+
+<p align="center">
+  <img src="docs/images/agent_graph.png" alt="Agent graph" width="360">
+</p>
+
+- **search** — a concrete request (e.g. `günstige Windeln`) → runs `/search` and returns products.
+  If nothing matches, it asks the user to refine rather than returning an empty list.
+- **clarify** — a vague request (e.g. `ich suche etwas`) → asks one question and **pauses**
+  (`interrupt`); the client answers via `/assist/resume` and the agent continues the same thread.
+- **route** — a navigational request (e.g. `Kaffee bei edeka`) → hands off a deep-link into that
+  partner's own product search.
+
+The LLM is reached through a LiteLLM gateway, so the provider is a config choice (`LLM_MODEL`,
+default `openai/gpt-4o-mini`). Conversation state is persisted in Postgres (`AsyncPostgresSaver`), so
+a paused clarify survives a restart and works across instances. See
+[ADR 0006](docs/decisions/0006-intent-agent-langgraph.md).
 
 ---
 
@@ -223,9 +249,15 @@ Each decision, with alternatives, is an ADR:
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /search` | Search across all partner catalogs |
+| `POST /assist` | Natural-language query → products, a clarifying question, or a partner hand-off |
+| `POST /assist/resume` | Answer a clarifying question and continue the conversation |
+| `GET /search` | Search across all partner catalogs (the mechanical primitive the agent drives) |
 | `GET /health` | Liveness probe |
 | `GET /ready` | Readiness probe (checks the database) |
+
+`POST /assist` takes `{ "query": "..." }` and returns one of three shapes, tagged by `type`:
+`products` (a ranked list), `clarify` (a `question` + a `thread_id` to resume with), or `route`
+(a `deeplink` into a partner's search). `POST /assist/resume` takes `{ "thread_id", "answer" }`.
 
 `GET /search` parameters:
 
@@ -274,6 +306,7 @@ The embedder, filter, and ranker are interfaces selected by environment variable
 
 | Concern | Env var | Default | Options |
 |---|---|---|---|
+| Agent LLM | `LLM_MODEL` | `openai/gpt-4o-mini` | any LiteLLM model id (`vertex_ai/…`, `anthropic/…`, …) |
 | Embedder | `EMBEDDING_PROVIDER` | `local` | `local`, `vertex`, `openai` |
 | Vector backend | `RETRIEVER_BACKEND` | `pgvector` | `pgvector` |
 | Candidate filter | `FILTER_STRATEGY` | `absolute` | `absolute`, `autocut`, `relative`, `none` |

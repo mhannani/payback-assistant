@@ -9,7 +9,7 @@ deliverable must also **run offline** for a reviewer (`make up`), which BigQuery
 it needs a GCP project, a dataset, and credentials. We need to honour the production
 preference *without* breaking the runnable demo.
 
-A second consideration: the hard part of this challenge — fair ranking across disparate
+A second consideration: the hard part of the problem — fair ranking across disparate
 catalogs (see [0002](0002-fair-cross-partner-ranking.md)) — is **application logic that
 lives above the vector store**. No vector database (pgvector, Qdrant, Milvus, BigQuery)
 solves it for you; it must be written regardless of the store.
@@ -33,7 +33,7 @@ any backend — porting to BigQuery rewrites only the two candidate queries
 ## Why not Qdrant / Milvus, or BigQuery now
 
 - **Qdrant / Milvus** would add an operational dependency for ~150 products and still not
-  solve the fair-ranking problem (the graded core). pgvector reuses the existing Postgres.
+  solve the fair-ranking problem. pgvector reuses the existing Postgres.
 - **BigQuery is a warehouse (OLAP)** — seconds-latency, serverless, no traditional indexes,
   pay-per-scan. It is the right tool for batch embedding and warehouse-scale similarity,
   but not for serving a real-time assistant directly. Implementing it fully now would need
