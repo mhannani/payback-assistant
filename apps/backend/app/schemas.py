@@ -7,9 +7,11 @@ types (``SearchHit``) so the wire contract can evolve independently of the inter
 from __future__ import annotations
 
 import uuid
+from typing import Annotated, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from app.agent.intents import Intent, Language, NextBestAction
 from app.retrieval.types import SearchHit
 from app.shared.partner import PARTNER_DISPLAY_NAMES, PartnerSlug
 
@@ -49,3 +51,61 @@ class ProductOut(BaseModel):
             image_url=hit.image_url,
             tags=hit.tags,
         )
+
+
+# ── Intent agent response ───────────────────────────────────────────
+# The assistant answers a query with ONE of three shapes — recommended products, a clarifying
+# question, or a hand-off to a partner's own search. Modelling that as a discriminated union (on
+# ``type``) makes the contract explicit: the client switches on ``type`` and the OpenAPI schema
+# documents every branch, instead of one model with most fields null. ``intent``/``action`` are
+# surfaced so a caller (or a reviewer) can see *why* the agent answered the way it did.
+
+
+class ProductsResponse(BaseModel):
+    """The agent understood a concrete request and searched the catalogs."""
+
+    type: Literal["products"] = "products"
+    intent: Intent
+    action: NextBestAction
+    language: Language
+    items: list[ProductOut]
+
+
+class ClarifyResponse(BaseModel):
+    """The query was too vague (or out of catalog scope); the agent asks one question.
+
+    ``thread_id`` ties the answer back to this paused conversation: the client replies via
+    ``POST /assist/resume`` with this id, and the graph continues from where it paused.
+    """
+
+    type: Literal["clarify"] = "clarify"
+    intent: Intent
+    action: NextBestAction
+    language: Language
+    question: str
+    thread_id: str
+
+
+class RouteResponse(BaseModel):
+    """The query was navigational — the shopper wants a specific partner's own search.
+
+    Rather than answer from our catalog, the agent hands off: it returns a deep-link into that
+    partner's native product search for the query, which the client renders as a link/button.
+    This is the brief's "route to a specific partner search" action.
+    """
+
+    type: Literal["route"] = "route"
+    intent: Intent
+    action: NextBestAction
+    language: Language
+    partner: PartnerSlug
+    partner_name: str
+    search_query: str
+    deeplink: str
+    message: str
+
+
+# Discriminated union: FastAPI/Pydantic pick the branch by the ``type`` field.
+AssistResponse = Annotated[
+    ProductsResponse | ClarifyResponse | RouteResponse, Field(discriminator="type")
+]

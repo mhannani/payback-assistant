@@ -6,6 +6,18 @@ dependencies = [
     "asyncpg>=0.31.0",
     "babel>=2.18.0",
     "fastapi>=0.138.0",
+    # Intent agent: LangGraph state machine + LiteLLM gateway (provider-agnostic LLM).
+    # Major-version caps — these AI libs break across majors; uv.lock pins exact prod versions.
+    "langgraph>=1.2,<2",
+    "langchain-core>=1.4,<2",
+    "langchain-litellm>=0.7,<1",
+    "litellm>=1.90,<2",
+    # Durable checkpointer so paused (clarify) conversations survive restarts / multiple
+    # instances — the production swap for the in-process MemorySaver.
+    "langgraph-checkpoint-postgres>=3.1,<4",
+    # psycopg[binary] bundles the precompiled libpq so the checkpointer connects without a
+    # system libpq install (the plain psycopg pulled in transitively has no pq wrapper).
+    "psycopg[binary]>=3.2,<4",
     "pgvector>=0.4.2",
     "pint>=0.25.3",
     "pydantic-settings>=2.14.2",
