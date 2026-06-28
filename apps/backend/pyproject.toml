@@ -19,6 +19,9 @@ dev = [
     "httpx>=0.28.1",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.0",
+    # Offline IR metrics (nDCG/Recall/MRR) for the A/B eval harness (data/eval.py).
+    # Dev-only: it must never enter the request path (see app/retrieval/fusion.py).
+    "ranx>=0.3.20",
     "ruff>=0.15.19",
 ]
 
@@ -27,3 +30,10 @@ testpaths = ["tests"]
 pythonpath = ["."]
 # Run `async def test_*` directly (the retrieval/embed tests run real SQL on Postgres).
 asyncio_mode = "auto"
+# Share ONE event loop across the suite. The app's pooled async engine binds connections
+# to the loop that opened them; a per-test loop would reuse a connection on a new loop and
+# raise "Event loop is closed". One loop mirrors production (a single long-lived loop).
+# Both tests AND async fixtures must use the same (session) loop, or a fixture-created
+# connection (e.g. db_session) ends up "attached to a different loop" than its test.
+asyncio_default_test_loop_scope = "session"
+asyncio_default_fixture_loop_scope = "session"

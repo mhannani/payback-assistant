@@ -1,20 +1,20 @@
-"""Smoke tests for the ops endpoints."""
+"""Smoke tests for the ops endpoints.
 
-from fastapi.testclient import TestClient
+Uses the async ``api_client`` (httpx + ASGI) so requests share the suite's single event
+loop — the sync TestClient spins its own loop per request and conflicts with it.
+"""
 
-from app.main import app
-
-client = TestClient(app)
+from __future__ import annotations
 
 
-def test_health_returns_ok() -> None:
-    response = client.get("/health")
+async def test_health_returns_ok(api_client) -> None:
+    response = await api_client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
-def test_ready_returns_ready_when_db_reachable() -> None:
+async def test_ready_returns_ready_when_db_reachable(api_client) -> None:
     # The test runs inside the container alongside the DB, so readiness should pass.
-    response = client.get("/ready")
+    response = await api_client.get("/ready")
     assert response.status_code == 200
     assert response.json() == {"status": "ready"}
