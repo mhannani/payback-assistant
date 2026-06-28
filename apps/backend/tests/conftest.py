@@ -8,6 +8,7 @@ at teardown, so they never pollute the seeded catalog and need no separate datab
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator, Iterator
 
 import pytest
@@ -19,6 +20,15 @@ from sqlalchemy.pool import NullPool
 from app.config import get_settings
 from app.embeddings import Embedder, get_embedder
 from app.main import app
+
+# Agent tests call a real LLM. They are skipped unless an OpenAI key is present, so the suite
+# stays green in environments without credentials (CI, a fresh clone) while still giving real
+# end-to-end coverage locally. The agent's pure logic is covered separately and always runs
+# (see test_agent_logic.py).
+requires_llm = pytest.mark.skipif(
+    not os.environ.get("OPENAI_API_KEY"),
+    reason="needs OPENAI_API_KEY — agent tests call a live LLM",
+)
 
 
 @pytest_asyncio.fixture
@@ -75,3 +85,18 @@ async def api_client() -> AsyncIterator[AsyncClient]:
 def embedder() -> Iterator[Embedder]:
     """One embedder for the whole test session (loading the model is the slow part)."""
     yield get_embedder()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def agent_client() -> AsyncIterator[AsyncClient]:
+    """An async client for the agent endpoints, with the app lifespan active.
+
+    Runs the app's real ``lifespan`` (which opens the durable checkpointer and compiles the agent
+    onto ``app.state``) for the whole agent-test session — the same setup the running app does.
+    Session-scoped so the checkpointer pool is opened once and lives across all agent tests; the
+    endpoints are stateless, so one shared client is safe.
+    """
+    async with app.router.lifespan_context(app):
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            yield client
