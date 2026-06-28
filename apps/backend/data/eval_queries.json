@@ -1,0 +1,62 @@
+{
+  "_comment": "Labelled queries for offline A/B evaluation of the retrieval stack. Relevance is defined by a predicate over the product NAME (case-insensitive regex), not by hardcoded ids, so the labels survive a re-seed. 'relevant' = any regex matches; 'irrelevant' = any regex matches (an explicit negative that must NOT appear). Used by data/eval.py with ranx.",
+  "k": 5,
+  "queries": [
+    {
+      "id": "windeln_de",
+      "query": "günstige Windeln",
+      "note": "German, common product + price intent",
+      "relevant": ["windel"],
+      "irrelevant": ["kaffee", "shampoo", "dusch"]
+    },
+    {
+      "id": "shampoo_de",
+      "query": "Shampoo",
+      "note": "German drugstore keyword",
+      "relevant": ["shampoo"],
+      "irrelevant": ["windel", "kaffee"]
+    },
+    {
+      "id": "pasta_dinner_en",
+      "query": "pasta dinner",
+      "note": "English, cross-lingual semantic (must find German Spaghetti/Penne)",
+      "relevant": ["spaghett", "penne", "nudel", "pasta"],
+      "irrelevant": ["zahnpasta", "windel", "shampoo"]
+    },
+    {
+      "id": "coffee_en",
+      "query": "coffee",
+      "note": "English, cross-lingual (must find German Kaffee)",
+      "relevant": ["kaffee", "café", "cappuccino", "espresso"],
+      "irrelevant": ["windel", "shampoo"]
+    },
+    {
+      "id": "anker_brand",
+      "query": "Anker",
+      "note": "Exact brand token — the keyword arm should shine here",
+      "relevant": ["anker"],
+      "irrelevant": ["windel", "kaffee", "shampoo"]
+    },
+    {
+      "id": "bio_pasta_de",
+      "query": "Bio Nudeln",
+      "note": "German, organic pasta — semantic + label",
+      "relevant": ["bio.*spaghet|bio.*penne|bio.*nudel|bio.*vollkorn|spaghet.*bio|penne.*bio"],
+      "irrelevant": ["zahnpasta", "windel"]
+    },
+    {
+      "id": "schokolade_de",
+      "query": "Schokolade",
+      "note": "German confectionery keyword",
+      "relevant": ["schokolade", "schoko"],
+      "irrelevant": ["windel", "shampoo"]
+    },
+    {
+      "id": "kopfhoerer_de",
+      "query": "kabellose Kopfhörer",
+      "note": "German electronics — semantic (Anker Soundcore headphones)",
+      "relevant": ["kopfhörer", "headphone", "soundcore"],
+      "irrelevant": ["windel", "kaffee"]
+    }
+  ]
+}

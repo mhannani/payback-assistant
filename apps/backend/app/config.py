@@ -34,6 +34,21 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "text-embedding-3-small"
 
+    # ── Retrieval strategy selection ────────────────────────────────
+    # The vector store, the candidate-filter, and the ranker are each pluggable; these
+    # pick the active strategy so they can be swapped / A/B-compared by config alone.
+    retriever_backend: str = "pgvector"
+    filter_strategy: str = "absolute"  # absolute | autocut | relative | none
+    ranking_strategy: str = "constrained"  # constrained | mmr | zscore
+
+    # ── Retrieval tuning ────────────────────────────────────────────
+    # Max cosine distance the 'absolute' filter keeps. Bound to the embedding model's
+    # distance scale — re-derive (via `make eval`) if EMBEDDING_PROVIDER changes.
+    filter_ceiling: float = 0.50
+    # Min ts_rank the keyword arm keeps, so its weak tail doesn't pollute fusion the way
+    # the vector arm's tail (cut by filter_ceiling) does. 0.0 keeps every @@-match.
+    fulltext_min_rank: float = 0.0
+
     @property
     def database_url(self) -> str:
         """Async SQLAlchemy DSN built from the discrete Postgres settings."""
