@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import re
 from itertools import product
 from pathlib import Path
@@ -31,7 +32,11 @@ from sqlalchemy import select
 from app.config import Settings
 from app.db.models import Product
 from app.db.session import SessionFactory
+from app.embeddings import get_embedder
 from app.retrieval.factory import get_retriever
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger("eval")
 
 QUERIES_PATH = Path(__file__).parent / "eval_queries.json"
 
@@ -68,10 +73,14 @@ async def build_qrels(spec: dict) -> Qrels:
     return qrels
 
 
-async def build_run(spec: dict, *, filter_strategy: str, ranking_strategy: str) -> Run:
-    """Run every query through one (filter × ranker) combo and record its ranking."""
+async def build_run(spec: dict, embedder, *, filter_strategy: str, ranking_strategy: str) -> Run:
+    """Run every query through one (filter × ranker) combo and record its ranking.
+
+    The embedder is built once by the caller and reused across all combos — only the filter and
+    ranker change, so reloading the model per combo would be pure waste.
+    """
     settings = Settings(filter_strategy=filter_strategy, ranking_strategy=ranking_strategy)
-    retriever = get_retriever(settings=settings)
+    retriever = get_retriever(embedder=embedder, settings=settings)
     k = spec["k"]
     run = Run(name=f"{filter_strategy}+{ranking_strategy}")
     async with SessionFactory() as session:
@@ -90,11 +99,19 @@ async def main() -> None:
     k = spec["k"]
     qrels = await build_qrels(spec)
 
+    # Load the embedding model ONCE and reuse it for every combo — it never changes across the
+    # filter × ranker grid, so reloading it per run would be wasted work.
+    log.info("loading embedder")
+    embedder = get_embedder()
+
+    combos = list(product(FILTERS, RANKERS))
+    log.info("evaluating %d filter × ranker combos over %d queries", len(combos), len(spec["queries"]))
     runs = []
-    for filter_strategy, ranking_strategy in product(FILTERS, RANKERS):
+    for filter_strategy, ranking_strategy in combos:
+        log.info("running combo: %s + %s", filter_strategy, ranking_strategy)
         runs.append(
             await build_run(
-                spec, filter_strategy=filter_strategy, ranking_strategy=ranking_strategy
+                spec, embedder, filter_strategy=filter_strategy, ranking_strategy=ranking_strategy
             )
         )
 

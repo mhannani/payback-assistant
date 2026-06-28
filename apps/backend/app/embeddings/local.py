@@ -35,5 +35,7 @@ class LocalEmbedder(Embedder):
     def _embed_raw(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
-        vectors = self._model.encode(texts, convert_to_numpy=True)
+        # show_progress_bar=False: keep stdout clean (no per-call progress bars) so command
+        # output is just our own logs.
+        vectors = self._model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
         return vectors.tolist()

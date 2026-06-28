@@ -33,7 +33,8 @@ COPY --from=builder --chown=app:app /opt/hf-cache /opt/hf-cache
 ENV PATH="/app/.venv/bin:$PATH" \
     HF_HOME=/opt/hf-cache \
     HF_HUB_OFFLINE=1 \
-    TRANSFORMERS_OFFLINE=1
+    TRANSFORMERS_OFFLINE=1 \
+    HF_HUB_DISABLE_PROGRESS_BARS=1
 
 COPY app/ ./app/
 COPY data/ ./data/

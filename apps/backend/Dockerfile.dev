@@ -28,7 +28,9 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 
 # After the model is cached, force offline so no code path reaches the network for it.
 ENV HF_HUB_OFFLINE=1 \
-    TRANSFORMERS_OFFLINE=1
+    TRANSFORMERS_OFFLINE=1 \
+    HF_HUB_DISABLE_PROGRESS_BARS=1
+
 
 # Copy the whole backend (app + data + tests) for an interactive dev container.
 COPY . /app/
