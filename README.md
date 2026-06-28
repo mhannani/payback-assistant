@@ -71,7 +71,7 @@ Everything runs offline on a local Docker stack — no API keys required.
 |---|---|
 | 1 — Recommendation engine | ✅ Done — ingestion adapters, embeddings, hybrid retrieval, fair cross-partner ranking, `/search`, eval harness |
 | 2 — Intent agent | ✅ Done — LangGraph agent: intent + language classification → search / clarify / route, durable clarify/resume, `/assist` |
-| 3 — Cloud deployment | ◻️ Not started — runs on Docker now; LLM, embedder, and vector store are config-switchable for GCP |
+| 3 — Cloud deployment | ✅ Done — multi-stage image, Terraform for GCP (Cloud Run) and AWS (ECS Fargate), each with managed Postgres/pgvector + secrets; load-test + cost-per-1000 report (`make perf`) |
 
 `/search` is a retrieval primitive: it does not parse intent from the query (it won't read "cheap" from
 *günstige*). Intent classification and the clarifying-question branch live in the **intent agent** (Task 2,
@@ -292,6 +292,12 @@ clarify→resume turn), printing the JSON (needs an LLM key in `.env.dev`):
 make demo    # → demo/run_demo.py
 ```
 
+Load-test it — latency percentiles and cost per 1000 requests (needs an LLM key):
+
+```bash
+make perf    # → perf/run_perf.py
+```
+
 Or hit `/search` directly, each query exercising a different path:
 
 ```bash
@@ -338,6 +344,33 @@ are illustrative; the relative ordering of strategies is the useful signal. All 
 
 ---
 
+## Performance & cost
+
+`make perf` load-tests `POST /assist` under concurrency and reports latency percentiles and cost. Each
+response carries the turn's LLM cost in its `usage` block — token counts from LangChain's native
+callback, priced by LiteLLM (no hand-maintained price table; see
+[`app/llm/cost.py`](apps/backend/app/llm/cost.py)) — so the client sums real figures.
+
+| Metric | Value (30 requests, concurrency 5) |
+|---|---|
+| Latency p50 / p95 / p99 | ~4.5 s / ~7.1 s / ~8.5 s |
+| LLM cost per request | ~$0.00014 |
+| **Cost per 1000 requests** | **~$0.14** |
+
+```bash
+make perf                              # quick run (a few cents)
+python perf/run_perf.py -n 1000 -c 20  # the literal 1000-request run
+```
+
+Cost per turn is near-constant, so cost-per-1000 scales linearly from a small sample (the run labels
+whether it is measured or extrapolated). **Latency is dominated by the single LLM call per turn** —
+classification is one structured call; retrieval is sub-millisecond index lookups. So the levers for
+faster, cheaper responses are model choice, prompt size, and caching, not the application code. With
+`gpt-4o-mini` the prompt is ~700 input tokens (the field-described `Classification` schema) and ~40
+output, which is why cost stays a fraction of a cent.
+
+---
+
 ## Project structure
 
 ```
@@ -362,11 +395,15 @@ apps/
     tests/               unit + DB-backed + agent tests
   frontend/              optional chat UI (future)
 demo/                    5-query demo client (make demo)
+perf/                    load-test client: latency + cost/1000 (make perf)
+infra/
+  gcp/                   Terraform: Cloud Run + Cloud SQL/pgvector + BigQuery + AR + Secret Mgr
+  aws/                   Terraform: ECS Fargate + RDS/pgvector + ECR + Secrets Mgr + ALB
 docs/
   architecture.md        system + query-path diagrams
   decisions/             ADRs 0001–0006
 docker-compose.dev.yml   dev stack (API + Postgres/pgvector)
-Makefile                 up / seed / embed / eval / demo / test / lint
+Makefile                 up / seed / embed / eval / demo / perf / test / lint
 ```
 
 ---
@@ -385,7 +422,7 @@ Makefile                 up / seed / embed / eval / demo / test / lint
 
 ## Testing
 
-`make test` runs 96 tests. The behavioural ones cover the cases specific to this problem:
+`make test` runs 111 tests. The behavioural ones cover the cases specific to this problem:
 
 - cross-lingual retrieval (English `pasta dinner` finds German Spaghetti; the keyword arm returns nothing
   for it, so the hybrid is doing real work)
@@ -398,15 +435,32 @@ Makefile                 up / seed / embed / eval / demo / test / lint
 
 ## Deployment
 
-Runs on Docker locally. The GCP path follows from the existing interfaces:
+The production image is a multi-stage, non-root `Dockerfile` (the embedding model is baked in for
+offline start-up). It deploys two ways:
 
-- **Cloud Run** serves the FastAPI container (the production `Dockerfile` is multi-stage, non-root).
-- **Vertex AI** embeddings via `EMBEDDING_PROVIDER=vertex`, moving inference off the request host.
-- **Vector store** stays Postgres + pgvector (Cloud SQL); a warehouse backend such as BigQuery is the
-  documented scale path behind the `Retriever` interface
+**Container on a host.** `docker compose` or a single container on any server — the simplest path and
+how the live demo runs.
+
+**Cloud-native, as Terraform.** Two parallel modules provision the same architecture on either cloud
+(both `terraform validate` clean):
+
+| | GCP — [`infra/gcp`](infra/gcp) (brief's preferred stack) | AWS — [`infra/aws`](infra/aws) |
+|---|---|---|
+| Compute | Cloud Run | ECS Fargate |
+| Serving DB | Cloud SQL Postgres + pgvector | RDS Postgres + pgvector |
+| Image registry | Artifact Registry | ECR |
+| Secret | Secret Manager (`OPENAI_API_KEY`) | Secrets Manager |
+| Entry point | Cloud Run URL | Application Load Balancer |
+
+Each module reads the OpenAI key from the cloud's secret store (never baked into the image), runs the
+DB as a managed service, and exposes the service URL as an output. See each module's README for the
+`init → fmt → validate → plan → apply` runbook.
+
+- **Vertex AI** is a config swap, not an infra change: `LLM_MODEL=vertex_ai/…` /
+  `EMBEDDING_PROVIDER=vertex` routes inference there via LiteLLM.
+- **BigQuery** is provisioned on GCP as the documented vector-search **scale** path behind the
+  `Retriever` interface — a warehouse seam, not the real-time serving store
   ([ADR 0003](docs/decisions/0003-pgvector-with-retriever-interface.md)).
-
-Provisioning (Terraform, CI/CD) is Task 3.
 
 ---
 

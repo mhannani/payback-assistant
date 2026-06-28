@@ -16,15 +16,18 @@ from __future__ import annotations
 
 import uuid
 
+from langchain_core.callbacks import get_usage_metadata_callback
 from langgraph.types import Command
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.llm.cost import usage_from_callback
 from app.schemas import (
     AssistResponse,
     ClarifyResponse,
     ProductOut,
     ProductsResponse,
     RouteResponse,
+    UsageOut,
 )
 from app.shared.partner import PARTNER_DISPLAY_NAMES
 
@@ -45,11 +48,14 @@ async def start_assist(agent, query: str, session: AsyncSession) -> AssistRespon
     lifecycle — the app supplies the one compiled with the durable checkpointer.
     """
     thread_id = uuid.uuid4().hex
-    result = await agent.ainvoke(
-        {"query": query},
-        config={"configurable": {"thread_id": thread_id, "session": session}},
-    )
-    return _to_response(result, thread_id)
+    # get_usage_metadata_callback sums token usage across every model call in the run (LangChain's
+    # native aggregator) — so we never thread tokens through graph state. We price it after.
+    with get_usage_metadata_callback() as cb:
+        result = await agent.ainvoke(
+            {"query": query},
+            config={"configurable": {"thread_id": thread_id, "session": session}},
+        )
+    return _to_response(result, thread_id, usage_from_callback(cb.usage_metadata))
 
 
 async def resume_assist(agent, thread_id: str, answer: str, session: AsyncSession) -> AssistResponse:
@@ -63,15 +69,17 @@ async def resume_assist(agent, thread_id: str, answer: str, session: AsyncSessio
     if not snapshot.next:
         raise UnknownThreadError(thread_id)
 
-    result = await agent.ainvoke(Command(resume=answer), config=config)
-    return _to_response(result, thread_id)
+    with get_usage_metadata_callback() as cb:
+        result = await agent.ainvoke(Command(resume=answer), config=config)
+    return _to_response(result, thread_id, usage_from_callback(cb.usage_metadata))
 
 
-def _to_response(result: dict, thread_id: str) -> AssistResponse:
+def _to_response(result: dict, thread_id: str, usage: UsageOut | None) -> AssistResponse:
     """Map the graph's end state to a products or clarify response.
 
     ``result["__interrupt__"]`` is present iff the run paused at the clarify node; its payload is
-    the question we surfaced via ``interrupt(question)``.
+    the question we surfaced via ``interrupt(question)``. ``usage`` is this turn's LLM token/cost
+    (see app.llm.cost), attached to every branch so a client can sum cost per turn.
     """
     interrupts = result.get("__interrupt__")
     classification = result["classification"]
@@ -79,6 +87,7 @@ def _to_response(result: dict, thread_id: str) -> AssistResponse:
         "intent": classification.intent,
         "action": result["action"],
         "language": classification.language,
+        "usage": usage,
     }
 
     if interrupts:

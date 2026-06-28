@@ -61,17 +61,38 @@ class ProductOut(BaseModel):
 # surfaced so a caller (or a reviewer) can see *why* the agent answered the way it did.
 
 
-class ProductsResponse(BaseModel):
-    """The agent understood a concrete request and searched the catalogs."""
+class UsageOut(BaseModel):
+    """What the turn cost: token counts (LangChain) priced in USD (LiteLLM). See app.llm.cost.
 
-    type: Literal["products"] = "products"
+    Returned on every branch as a **demo convenience** so a client can sum cost per turn (the
+    brief's "cost per 1000 requests"). In production this belongs in telemetry or a debug header,
+    not the public response body — it's here to make the cost transparently measurable.
+    """
+
+    model: str
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
+
+
+class _AssistBase(BaseModel):
+    """Fields every assist branch shares: why the agent answered (intent/action/language) and
+    what the turn cost (usage). The discriminated branches add their own payload below."""
+
     intent: Intent
     action: NextBestAction
     language: Language
+    usage: UsageOut | None = None
+
+
+class ProductsResponse(_AssistBase):
+    """The agent understood a concrete request and searched the catalogs."""
+
+    type: Literal["products"] = "products"
     items: list[ProductOut]
 
 
-class ClarifyResponse(BaseModel):
+class ClarifyResponse(_AssistBase):
     """The query was too vague (or out of catalog scope); the agent asks one question.
 
     ``thread_id`` ties the answer back to this paused conversation: the client replies via
@@ -79,14 +100,11 @@ class ClarifyResponse(BaseModel):
     """
 
     type: Literal["clarify"] = "clarify"
-    intent: Intent
-    action: NextBestAction
-    language: Language
     question: str
     thread_id: str
 
 
-class RouteResponse(BaseModel):
+class RouteResponse(_AssistBase):
     """The query was navigational — the shopper wants a specific partner's own search.
 
     Rather than answer from our catalog, the agent hands off: it returns a deep-link into that
@@ -95,9 +113,6 @@ class RouteResponse(BaseModel):
     """
 
     type: Literal["route"] = "route"
-    intent: Intent
-    action: NextBestAction
-    language: Language
     partner: PartnerSlug
     partner_name: str
     search_query: str

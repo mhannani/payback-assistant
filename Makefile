@@ -14,7 +14,7 @@ DEV := docker compose -f docker-compose.dev.yml
 EXEC_API := docker exec payback_api
 
 .DEFAULT_GOAL := help
-.PHONY: help up down logs fetch seed embed eval demo test lint
+.PHONY: help up down logs fetch seed embed eval demo perf test lint
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -43,6 +43,9 @@ eval: ## A/B-evaluate the filter × ranker strategies (nDCG/Recall/MRR; run afte
 
 demo: ## Run the 5-query demo against the live assistant (needs an LLM key; run after embed)
 	$(EXEC_API) python /demo/run_demo.py
+
+perf: ## Load-test the assistant: latency p50/p95/p99 + cost per 1000 (needs an LLM key)
+	$(EXEC_API) python /perf/run_perf.py
 
 test: ## Run the test suite
 	$(EXEC_API) python -m pytest

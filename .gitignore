@@ -24,3 +24,12 @@ venv/
 .idea/
 .vscode/
 .DS_Store
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!*.tfvars.example
+# .terraform.lock.hcl IS committed (pins provider hashes for reproducible plans).

@@ -1,0 +1,50 @@
+# Build the API image and push it to the GitHub Container Registry (GHCR).
+#
+# This is the release step that sits between the code and the infrastructure: Terraform provisions
+# the cloud (Cloud Run / ECS Fargate), and this workflow produces the image those services pull.
+# GHCR already exists (it's GitHub's), so there is no "registry created by terraform, but the image
+# must exist before the service starts" ordering problem — both clouds pull the same published image.
+
+name: build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {} # allow manual runs
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }} # ghcr.io/mhannani/payback-assistant
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # required to push to GHCR
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The default docker driver can't export the gha cache; buildx can.
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/backend # the Dockerfile COPYs app/ data/ pyproject.toml uv.lock from here
+          file: apps/backend/Dockerfile
+          push: true
+          # Tag both with the commit SHA (immutable, for pinning) and latest (for the demo deploy).
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

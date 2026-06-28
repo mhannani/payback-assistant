@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Never commit real secrets.
+project_id = "your-gcp-project"
+region     = "europe-west3"
+image      = "europe-west3-docker.pkg.dev/your-gcp-project/payback/api:latest"
+
+# Secrets — prefer environment variables (TF_VAR_db_password / TF_VAR_openai_api_key) over a file.
+db_password    = "change-me"
+openai_api_key = "sk-..."
