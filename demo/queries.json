@@ -1,0 +1,31 @@
+{
+  "_comment": "Five demo queries, each a distinct intent × language. run_demo.py loads these, sends each to POST /assist, and prints the JSON. The vague one triggers a clarifying question, which the runner then answers via /assist/resume using its `clarify_answer`.",
+  "queries": [
+    {
+      "label": "German · specific + price intent",
+      "query": "günstige Windeln",
+      "expect": "products"
+    },
+    {
+      "label": "English · cross-lingual search",
+      "query": "pasta dinner",
+      "expect": "products"
+    },
+    {
+      "label": "German · navigational (route to a partner)",
+      "query": "zeig mir Kaffee bei edeka",
+      "expect": "route"
+    },
+    {
+      "label": "English · vague → clarifying question, then resume",
+      "query": "I want something to eat",
+      "expect": "clarify",
+      "clarify_answer": "chocolate"
+    },
+    {
+      "label": "German · dietary filter",
+      "query": "vegane Schokolade",
+      "expect": "products"
+    }
+  ]
+}

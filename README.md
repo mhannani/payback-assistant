@@ -282,10 +282,17 @@ Requires Docker. From the repository root:
 make up      # start the API + Postgres/pgvector
 make seed    # load the partner catalogs
 make embed   # compute embeddings (required before search returns results)
-make test    # run the test suite (96 tests)
+make test    # run the test suite
 ```
 
-Example queries, each hitting a different path:
+See the whole assistant at once — five queries across languages and intents (incl. a
+clarify→resume turn), printing the JSON (needs an LLM key in `.env.dev`):
+
+```bash
+make demo    # → demo/run_demo.py
+```
+
+Or hit `/search` directly, each query exercising a different path:
 
 ```bash
 curl 'http://localhost:8000/search?q=Windeln'                        # German keyword
@@ -352,13 +359,14 @@ apps/
       seed.py            load catalogs → DB
       embed.py           compute embeddings (provenance-aware, idempotent)
       eval.py            A/B evaluation harness (make eval)
-    tests/               96 tests
+    tests/               unit + DB-backed + agent tests
   frontend/              optional chat UI (future)
+demo/                    5-query demo client (make demo)
 docs/
   architecture.md        system + query-path diagrams
-  decisions/             ADRs 0001–0005
+  decisions/             ADRs 0001–0006
 docker-compose.dev.yml   dev stack (API + Postgres/pgvector)
-Makefile                 up / seed / embed / eval / test / lint
+Makefile                 up / seed / embed / eval / demo / test / lint
 ```
 
 ---

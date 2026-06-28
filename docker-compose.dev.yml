@@ -25,6 +25,7 @@ services:
       - "8000:8000"
     volumes:
       - ./apps/backend/app:/app/app   # live reload during development
+      - ./demo:/demo                  # demo client (make demo), run from inside the container
     env_file: .env.dev    # all app config in one place (see .env.example for the options)
     environment:
       POSTGRES_HOST: db   # in-network DB host; overrides the .env.dev value for compose
