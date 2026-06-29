@@ -67,19 +67,28 @@ lint: ## Lint the codebase
 TF_AWS := terraform -chdir=infra/aws
 TF_GCP := terraform -chdir=infra/gcp
 
+# Deploy an IMMUTABLE image tag by default: the current commit SHA, which CI publishes alongside
+# :latest. Pinning the SHA makes every deploy traceable to a commit and rollback-able (just deploy
+# a previous SHA), and a new SHA guarantees a new task definition → a guaranteed image roll.
+# Override for the quick path: `make redeploy-aws IMAGE_TAG=latest`.
+# Full SHA to match the tag CI publishes (`${{ github.sha }}` in .github/workflows/build.yml).
+IMAGE_REPO := ghcr.io/mhannani/payback-assistant
+IMAGE_TAG  ?= $(shell git rev-parse HEAD)
+IMAGE      := $(IMAGE_REPO):$(IMAGE_TAG)
+
 # Fail fast with an actionable message if the LLM key isn't exported (a bare terraform run would
 # otherwise print a cryptic "No value for required variable").
 check-secrets:
 	@test -n "$$TF_VAR_llm_api_key" || { echo "✗ TF_VAR_llm_api_key not set. Run: export TF_VAR_llm_api_key=sk-..."; exit 1; }
 
-deploy-aws: check-secrets ## Provision the AWS stack (ECS Fargate + RDS/pgvector + ALB) from infra/aws/terraform.tfvars
+deploy-aws: check-secrets ## Provision the AWS stack at the current commit's image (override: IMAGE_TAG=latest)
 	$(TF_AWS) init -input=false
-	$(TF_AWS) apply -input=false -auto-approve
-	@echo "Service: $$($(TF_AWS) output -raw service_url)  —  next: make seed-aws"
+	$(TF_AWS) apply -input=false -auto-approve -var 'image=$(IMAGE)'
+	@echo "Service: $$($(TF_AWS) output -raw service_url)  (image $(IMAGE_TAG))  —  next: make seed-aws"
 
-redeploy-aws: ## Roll the service to the latest image (after a CI build) — no data loss, no re-apply
-	aws ecs update-service --cluster "$$($(TF_AWS) output -raw cluster)" --service payback-api \
-	  --force-new-deployment --region "$$($(TF_AWS) output -raw region)" --no-cli-pager
+redeploy-aws: check-secrets ## Roll the live service to IMAGE_TAG (default: current commit SHA) — no data loss
+	$(TF_AWS) apply -input=false -auto-approve -var 'image=$(IMAGE)'
+	@echo "Rolled payback-api to image $(IMAGE_TAG)."
 
 seed-aws: ## Run the one-off seed job in-VPC (init_db → seed → embed) against RDS
 	@region=$$($(TF_AWS) output -raw region); \
@@ -95,10 +104,10 @@ seed-aws: ## Run the one-off seed job in-VPC (init_db → seed → embed) agains
 destroy-aws: check-secrets ## Tear down the AWS stack
 	$(TF_AWS) destroy -input=false -auto-approve
 
-deploy-gcp: check-secrets ## Provision the GCP stack (Cloud Run + Cloud SQL/pgvector + BigQuery) from infra/gcp/terraform.tfvars
+deploy-gcp: ## Provision the GCP stack at the current commit's image (override: IMAGE_TAG=latest)
 	$(TF_GCP) init -input=false
-	$(TF_GCP) apply -input=false -auto-approve
-	@echo "Service: $$($(TF_GCP) output -raw service_url)  —  next: make seed-gcp"
+	$(TF_GCP) apply -input=false -auto-approve -var 'image=$(IMAGE)'
+	@echo "Service: $$($(TF_GCP) output -raw service_url)  (image $(IMAGE_TAG))  —  next: make seed-gcp"
 
 seed-gcp: ## Run the one-off Cloud Run seed job (init_db → seed → embed) against Cloud SQL
 	gcloud run jobs execute $$($(TF_GCP) output -raw seed_job) --region "$$($(TF_GCP) output -raw region)" --wait
