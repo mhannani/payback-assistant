@@ -188,6 +188,33 @@ resource "aws_ecs_cluster" "api" {
   name = "payback"
 }
 
+# The API and the one-off seed job share the same image, DB env, secret, and logs — only the
+# command differs. Factor the common bits so the two task definitions can't drift apart.
+locals {
+  # The app builds its DB URL from POSTGRES_* parts (see app/config.py), so point those at RDS.
+  container_env = [
+    { name = "POSTGRES_HOST", value = aws_db_instance.postgres.address },
+    { name = "POSTGRES_PORT", value = "5432" },
+    { name = "POSTGRES_DB", value = aws_db_instance.postgres.db_name },
+    { name = "POSTGRES_USER", value = aws_db_instance.postgres.username },
+    { name = "POSTGRES_PASSWORD", value = var.db_password },
+    # OpenAI by default — one key in Secrets Manager, no cross-cloud dependency.
+    { name = "EMBEDDING_PROVIDER", value = var.embedding_provider },
+    { name = "LLM_MODEL", value = var.llm_model },
+  ]
+
+  # The OpenAI key is pulled from Secrets Manager at task start, not stored in the task def.
+  container_secrets = [
+    { name = "OPENAI_API_KEY", valueFrom = aws_secretsmanager_secret.openai.arn }
+  ]
+
+  log_options = {
+    "awslogs-group"         = aws_cloudwatch_log_group.api.name
+    "awslogs-region"        = var.region
+    "awslogs-stream-prefix" = "api"
+  }
+}
+
 resource "aws_ecs_task_definition" "api" {
   family                   = "payback-api"
   requires_compatibilities = ["FARGATE"]
@@ -198,32 +225,44 @@ resource "aws_ecs_task_definition" "api" {
 
   container_definitions = jsonencode([
     {
-      name      = "api"
-      image     = var.image
-      essential = true
-      portMappings = [
-        { containerPort = 8000, protocol = "tcp" }
-      ]
-      environment = [
-        {
-          name  = "DATABASE_URL"
-          value = "postgresql+asyncpg://${aws_db_instance.postgres.username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${aws_db_instance.postgres.db_name}"
-        },
-        # OpenAI by default — one key in Secrets Manager, no cross-cloud dependency.
-        { name = "EMBEDDING_PROVIDER", value = var.embedding_provider },
-        { name = "LLM_MODEL", value = var.llm_model },
-      ]
-      # The OpenAI key is pulled from Secrets Manager at task start, not stored in the task def.
-      secrets = [
-        { name = "OPENAI_API_KEY", valueFrom = aws_secretsmanager_secret.openai.arn }
-      ]
+      name         = "api"
+      image        = var.image
+      essential    = true
+      portMappings = [{ containerPort = 8000, protocol = "tcp" }]
+      environment  = local.container_env
+      secrets      = local.container_secrets
       logConfiguration = {
         logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.api.name
-          "awslogs-region"        = var.region
-          "awslogs-stream-prefix" = "api"
-        }
+        options   = local.log_options
+      }
+    }
+  ])
+}
+
+# One-off seed job: same image + network as the service, run inside the VPC so it reaches the
+# private RDS with no public exposure. Run it once after apply:
+#   aws ecs run-task --cluster payback --task-definition payback-seed --launch-type FARGATE \
+#     --network-configuration "awsvpcConfiguration={subnets=[...],securityGroups=[...],assignPublicIp=ENABLED}"
+# It loads the catalogs and computes embeddings, then exits.
+resource "aws_ecs_task_definition" "seed" {
+  family                   = "payback-seed"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = "512"
+  memory                   = "1024"
+  execution_role_arn       = aws_iam_role.execution.arn
+
+  container_definitions = jsonencode([
+    {
+      name        = "seed"
+      image       = var.image
+      essential   = true
+      command     = ["sh", "-c", "python -m data.init_db && python -m data.seed && python -m data.embed"]
+      environment = local.container_env
+      secrets     = local.container_secrets
+      logConfiguration = {
+        logDriver = "awslogs"
+        options   = local.log_options
       }
     }
   ])

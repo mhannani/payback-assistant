@@ -16,6 +16,23 @@ AWS-native services: **ECS Fargate** (API) + **RDS** Postgres/pgvector (serving 
 | Security groups | ALB → service → DB, each tier reachable only by the one in front |
 | IAM execution role | Least-privilege: pull image, read the secret, write logs |
 
+## Required deployer permissions
+
+`terraform apply` creates managed services, so the principal running it (your IAM user, an assumed
+role, or CI) needs permission to create them. The application's *runtime* permissions are in the
+Terraform (the ECS execution role); these are the *deployer's* permissions — environment setup, not
+repo code. Attach these to the deploying principal (or run under `PowerUserAccess` + `IAMFullAccess`):
+
+| Service | Managed policy |
+|---|---|
+| ECS / Fargate | `AmazonECS_FullAccess` |
+| RDS | `AmazonRDSFullAccess` |
+| Secrets Manager | `SecretsManagerReadWrite` |
+| CloudWatch Logs | `CloudWatchLogsFullAccess` |
+| ECR | `AmazonEC2ContainerRegistryFullAccess` |
+| VPC / EC2 / ELB | `AmazonVPCFullAccess`, `AmazonEC2FullAccess`, `ElasticLoadBalancingFullAccess` |
+| IAM (create the runtime role) | `IAMFullAccess` |
+
 ## Runbook
 
 ```bash

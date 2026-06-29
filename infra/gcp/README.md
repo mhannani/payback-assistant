@@ -14,6 +14,15 @@ The brief's preferred stack: **Cloud Run** (API) + **Cloud SQL** Postgres/pgvect
 | Secret Manager | Injects `OPENAI_API_KEY` at runtime (never baked into the image) |
 | Service account + IAM | Least-privilege runtime: read the secret, connect to Cloud SQL |
 
+## Required deployer permissions
+
+`terraform apply` enables the APIs and creates managed services, so the deploying principal needs
+the rights to do so (the application's *runtime* permissions are the service account in the
+Terraform; these are the *deployer's*). Grant the account running Terraform `roles/owner` on the
+project, or — for least privilege — `roles/run.admin`, `roles/cloudsql.admin`,
+`roles/artifactregistry.admin`, `roles/secretmanager.admin`, `roles/bigquery.admin`,
+`roles/iam.serviceAccountAdmin`, and `roles/serviceusage.serviceUsageAdmin`.
+
 ## Runbook
 
 ```bash

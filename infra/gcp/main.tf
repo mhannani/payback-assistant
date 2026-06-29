@@ -178,6 +178,69 @@ resource "google_cloud_run_v2_service" "api" {
   depends_on = [google_project_service.enabled]
 }
 
+# The runtime calls Vertex AI for embeddings (and optionally the LLM), so grant the user role.
+resource "google_project_iam_member" "run_vertex_user" {
+  project = var.project_id
+  role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.run.email}"
+}
+
+# One-off seed job: same image + identity as the service, reaching Cloud SQL over the private
+# socket — no public DB exposure. Run it once after apply:
+#   gcloud run jobs execute payback-seed --region <region> --wait
+# It loads the catalogs and computes embeddings (via Vertex), then exits.
+resource "google_cloud_run_v2_job" "seed" {
+  name     = "payback-seed"
+  location = var.region
+
+  template {
+    template {
+      service_account = google_service_account.run.email
+
+      volumes {
+        name = "cloudsql"
+        cloud_sql_instance {
+          instances = [google_sql_database_instance.postgres.connection_name]
+        }
+      }
+
+      containers {
+        image   = var.image
+        command = ["sh", "-c", "python -m data.init_db && python -m data.seed && python -m data.embed"]
+
+        env {
+          name  = "EMBEDDING_PROVIDER"
+          value = "vertex"
+        }
+        env {
+          name  = "LLM_MODEL"
+          value = var.llm_model
+        }
+        env {
+          name  = "DATABASE_URL"
+          value = "postgresql+asyncpg://${google_sql_user.app.name}:${var.db_password}@/${google_sql_database.app.name}?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
+        }
+        env {
+          name = "OPENAI_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.openai.secret_id
+              version = "latest"
+            }
+          }
+        }
+
+        volume_mounts {
+          name       = "cloudsql"
+          mount_path = "/cloudsql"
+        }
+      }
+    }
+  }
+
+  depends_on = [google_project_service.enabled]
+}
+
 # Public endpoint (a shopper-facing API). Tighten with IAM/IAP behind a gateway in production.
 resource "google_cloud_run_v2_service_iam_member" "public" {
   name     = google_cloud_run_v2_service.api.name

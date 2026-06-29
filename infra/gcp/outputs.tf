@@ -17,3 +17,8 @@ output "bigquery_dataset" {
   description = "BigQuery dataset for the vector-search scale path (ADR 0003)."
   value       = google_bigquery_dataset.vectors.dataset_id
 }
+
+output "seed_command" {
+  description = "Run once after apply to load the catalog + embeddings into Cloud SQL."
+  value       = "gcloud run jobs execute ${google_cloud_run_v2_job.seed.name} --region ${var.region} --wait"
+}

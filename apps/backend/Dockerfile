@@ -33,6 +33,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 COPY app/ ./app/
 COPY data/ ./data/
+COPY db/ ./db/
 
 USER app
 EXPOSE 8000
