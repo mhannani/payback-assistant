@@ -55,15 +55,18 @@ def _retriever() -> Retriever:
 
 @app.get("/", tags=["ops"])
 def root() -> dict[str, object]:
-    """A friendly landing response, so hitting the bare URL isn't a 404."""
+    """A friendly landing response that maps the API, so hitting the bare URL isn't a 404."""
     return {
         "name": "PAYBACK Assistant",
         "description": "Multilingual product assistant across partner catalogs (dm · EDEKA · Amazon).",
         "docs": "/docs",
         "endpoints": {
-            "assist": "POST /assist",
-            "search": "GET /search?q=...",
-            "health": "GET /health",
+            "POST /assist": "Natural-language query → recommended products, a clarifying question, or a partner hand-off",
+            "POST /assist/resume": "Answer a clarifying question and continue the same conversation",
+            "GET /search?q=...": "Search all partner catalogs directly (the retrieval primitive the agent drives)",
+            "GET /config": "The active, non-secret configuration (embedder, model, dimension, filter, ranker)",
+            "GET /health": "Liveness probe — the process is up",
+            "GET /ready": "Readiness probe — the database is reachable",
         },
     }
 
