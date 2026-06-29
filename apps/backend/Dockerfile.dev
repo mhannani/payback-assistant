@@ -18,10 +18,11 @@ WORKDIR /app
 ENV HF_HOME=/opt/hf-cache \
     EMBEDDING_MODEL_NAME=paraphrase-multilingual-MiniLM-L12-v2
 
-# Install all dependencies (including dev) first — cached unless the lock changes.
+# Install all dependencies (including dev + the local embedder extra) — cached unless the lock
+# changes. `--extra local` brings sentence-transformers/torch for the offline demo and tests.
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project
+    uv sync --frozen --no-install-project --extra local
 
 # Bake the embedding model into the image (downloaded once, into HF_HOME above).
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('$EMBEDDING_MODEL_NAME')"

@@ -141,6 +141,16 @@ resource "google_cloud_run_v2_service" "api" {
         container_port = 8000
       }
 
+      # Production serves embeddings off-host via Vertex (the lean image has no local model/torch).
+      env {
+        name  = "EMBEDDING_PROVIDER"
+        value = "vertex"
+      }
+      env {
+        name  = "LLM_MODEL"
+        value = var.llm_model
+      }
+
       # DB connection over the Cloud SQL unix socket mounted below.
       env {
         name  = "DATABASE_URL"

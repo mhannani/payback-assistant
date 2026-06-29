@@ -1,4 +1,9 @@
 # syntax=docker/dockerfile:1
+#
+# Production image — lean and cloud-first. It installs the cloud embedder extra (Vertex / OpenAI)
+# and NOT the local one, so torch and the bundled model are absent: a small image with fast cold
+# starts, with inference served off-host (the brief's "Vertex AI for model serving"). The offline,
+# torch-based local embedder is the dev image's job (Dockerfile.dev), used for the runnable demo.
 
 # ── Builder: resolve and install dependencies with uv ───────────────
 FROM python:3.12-slim AS builder
@@ -10,15 +15,11 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 WORKDIR /app
 
-# Install dependencies first (cached unless the lockfile changes).
+# Install dependencies first (cached unless the lockfile changes). `--extra cloud` adds the Vertex
+# and OpenAI SDKs; `--no-dev` and no `--extra local` keep torch/sentence-transformers out.
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev
-
-# Bake the embedding model into a cache the runtime stage copies, so the image
-# serves the local embedder offline with no runtime download.
-ENV HF_HOME=/opt/hf-cache
-RUN /app/.venv/bin/python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
+    uv sync --frozen --no-install-project --no-dev --extra cloud
 
 # ── Runtime: slim image with only what we need to serve ─────────────
 FROM python:3.12-slim AS runtime
@@ -27,14 +28,8 @@ FROM python:3.12-slim AS runtime
 RUN useradd --create-home --uid 1000 app
 WORKDIR /app
 
-# Bring the resolved virtualenv and the cached embedding model from the builder.
 COPY --from=builder /app/.venv /app/.venv
-COPY --from=builder --chown=app:app /opt/hf-cache /opt/hf-cache
-ENV PATH="/app/.venv/bin:$PATH" \
-    HF_HOME=/opt/hf-cache \
-    HF_HUB_OFFLINE=1 \
-    TRANSFORMERS_OFFLINE=1 \
-    HF_HUB_DISABLE_PROGRESS_BARS=1
+ENV PATH="/app/.venv/bin:$PATH"
 
 COPY app/ ./app/
 COPY data/ ./data/

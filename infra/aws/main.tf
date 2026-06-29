@@ -208,7 +208,10 @@ resource "aws_ecs_task_definition" "api" {
         {
           name  = "DATABASE_URL"
           value = "postgresql+asyncpg://${aws_db_instance.postgres.username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${aws_db_instance.postgres.db_name}"
-        }
+        },
+        # OpenAI by default — one key in Secrets Manager, no cross-cloud dependency.
+        { name = "EMBEDDING_PROVIDER", value = var.embedding_provider },
+        { name = "LLM_MODEL", value = var.llm_model },
       ]
       # The OpenAI key is pulled from Secrets Manager at task start, not stored in the task def.
       secrets = [

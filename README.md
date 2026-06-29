@@ -435,8 +435,10 @@ Makefile                 up / seed / embed / eval / demo / perf / test / lint
 
 ## Deployment
 
-The production image is a multi-stage, non-root `Dockerfile` (the embedding model is baked in for
-offline start-up). It deploys two ways:
+Two images by design. The **dev image** bakes the local model for a zero-credential offline demo;
+the **production image** (multi-stage, non-root) is lean and cloud-first — it installs only the cloud
+embedder (Vertex / OpenAI), no torch, so inference is served off-host (the brief's "Vertex AI for
+model serving") and cold starts stay fast. It deploys two ways:
 
 **Container on a host.** `docker compose` or a single container on any server — the simplest path and
 how the live demo runs.

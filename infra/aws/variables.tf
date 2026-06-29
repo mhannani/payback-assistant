@@ -26,6 +26,18 @@ variable "db_instance_class" {
   default     = "db.t3.micro"
 }
 
+variable "llm_model" {
+  description = "LiteLLM model id for the agent."
+  type        = string
+  default     = "openai/gpt-4o-mini"
+}
+
+variable "embedding_provider" {
+  description = "Cloud embedding provider (openai | vertex)."
+  type        = string
+  default     = "openai"
+}
+
 variable "db_password" {
   description = "Password for the Postgres app user. Pass via a .tfvars file (gitignored) or TF_VAR_db_password — never commit it."
   type        = string

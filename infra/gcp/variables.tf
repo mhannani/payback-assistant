@@ -21,6 +21,12 @@ variable "db_tier" {
   default     = "db-f1-micro"
 }
 
+variable "llm_model" {
+  description = "LiteLLM model id for the agent. Defaults to Vertex Gemini for an all-GCP path."
+  type        = string
+  default     = "vertex_ai/gemini-2.0-flash"
+}
+
 variable "db_password" {
   description = "Password for the Postgres app user. Pass via a .tfvars file (gitignored) or TF_VAR_db_password — never commit it."
   type        = string

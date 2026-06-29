@@ -21,10 +21,18 @@ dependencies = [
     "pgvector>=0.4.2",
     "pint>=0.25.3",
     "pydantic-settings>=2.14.2",
-    "sentence-transformers>=5.6.0",
     "sqlalchemy[asyncio]>=2.0.51",
     "uvicorn[standard]>=0.49.0",
 ]
+
+# The embedder is provider-pluggable, and each provider's heavy SDK is OPTIONAL so an image
+# installs only what it runs:
+#   - "local" (sentence-transformers → torch) for the offline demo/dev image,
+#   - "cloud" (Vertex / OpenAI) for the lean production image, where inference is served off-host.
+# Embedder impls lazy-import their SDK, so the app loads with either group installed.
+[project.optional-dependencies]
+local = ["sentence-transformers>=5.6.0"]
+cloud = ["google-cloud-aiplatform>=1.130.0", "openai>=2.9.0"]
 
 [dependency-groups]
 dev = [
