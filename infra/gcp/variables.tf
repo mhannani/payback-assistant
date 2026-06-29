@@ -27,14 +27,9 @@ variable "llm_model" {
   default     = "vertex_ai/gemini-2.0-flash"
 }
 
-variable "db_password" {
-  description = "Password for the Postgres app user. Pass via a .tfvars file (gitignored) or TF_VAR_db_password — never commit it."
+variable "llm_api_key" {
+  description = "API key for the provider in llm_model, injected under that provider's env var name (derived automatically). Leave empty for the default all-Vertex path (ADC, no key). Pass via TF_VAR_llm_api_key, never commit."
   type        = string
   sensitive   = true
-}
-
-variable "openai_api_key" {
-  description = "OpenAI key the agent uses, stored in Secret Manager (not baked into the image). Pass via env/tfvars, never commit."
-  type        = string
-  sensitive   = true
+  default     = ""
 }

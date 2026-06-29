@@ -21,6 +21,15 @@ locals {
     "secretmanager.googleapis.com",
     "bigquery.googleapis.com",
   ]
+
+  # The env var name the provider's key is exposed as, derived from llm_model's provider prefix so
+  # it can't drift from the model. The default all-Vertex path (vertex_ai/…) needs no key — ADC
+  # authenticates — so it falls back to a harmless name over the (empty) secret.
+  llm_api_key_env = lookup({
+    openai    = "OPENAI_API_KEY"
+    anthropic = "ANTHROPIC_API_KEY"
+    gemini    = "GEMINI_API_KEY"
+  }, split("/", var.llm_model)[0], "OPENAI_API_KEY")
 }
 
 resource "google_project_service" "enabled" {
@@ -67,10 +76,17 @@ resource "google_sql_database" "app" {
   instance = google_sql_database_instance.postgres.name
 }
 
+# The DB password is internal plumbing (only the app, over the private socket, uses it), so
+# Terraform generates it — the deployer never has to invent or handle it.
+resource "random_password" "db" {
+  length  = 32
+  special = false
+}
+
 resource "google_sql_user" "app" {
   name     = "payback"
   instance = google_sql_database_instance.postgres.name
-  password = var.db_password
+  password = random_password.db.result
 }
 
 # ── BigQuery: the documented vector-search scale path (ADR 0003) ─────
@@ -82,9 +98,12 @@ resource "google_bigquery_dataset" "vectors" {
   depends_on = [google_project_service.enabled]
 }
 
-# ── Secret: the OpenAI key (runtime-injected, never in the image) ────
-resource "google_secret_manager_secret" "openai" {
-  secret_id = "payback-openai-api-key"
+# ── Secret: the LLM/embedding provider key (runtime-injected, never in the image) ────
+# Provider-agnostic: exposed to the container under the provider's expected env var name
+# (local.llm_api_key_env). With EMBEDDING_PROVIDER=vertex + an LLM via Vertex, no key is needed at
+# all (the runtime service account / ADC authenticates) — leave llm_api_key empty in that case.
+resource "google_secret_manager_secret" "llm" {
+  secret_id = "payback-llm-api-key"
 
   replication {
     auto {}
@@ -93,9 +112,9 @@ resource "google_secret_manager_secret" "openai" {
   depends_on = [google_project_service.enabled]
 }
 
-resource "google_secret_manager_secret_version" "openai" {
-  secret      = google_secret_manager_secret.openai.id
-  secret_data = var.openai_api_key
+resource "google_secret_manager_secret_version" "llm" {
+  secret      = google_secret_manager_secret.llm.id
+  secret_data = var.llm_api_key
 }
 
 # ── Runtime identity (least privilege) ──────────────────────────────
@@ -105,8 +124,8 @@ resource "google_service_account" "run" {
 }
 
 # Read the OpenAI secret.
-resource "google_secret_manager_secret_iam_member" "run_reads_openai" {
-  secret_id = google_secret_manager_secret.openai.id
+resource "google_secret_manager_secret_iam_member" "run_reads_llm" {
+  secret_id = google_secret_manager_secret.llm.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.run.email}"
 }
@@ -154,15 +173,16 @@ resource "google_cloud_run_v2_service" "api" {
       # DB connection over the Cloud SQL unix socket mounted below.
       env {
         name  = "DATABASE_URL"
-        value = "postgresql+asyncpg://${google_sql_user.app.name}:${var.db_password}@/${google_sql_database.app.name}?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
+        value = "postgresql+asyncpg://${google_sql_user.app.name}:${random_password.db.result}@/${google_sql_database.app.name}?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
       }
 
-      # The OpenAI key comes from Secret Manager, not the image or plain env.
+      # The provider key comes from Secret Manager (under the provider's env var name), not the
+      # image or plain env. Unused when the LLM is on Vertex (ADC) — harmless if llm_api_key empty.
       env {
-        name = "OPENAI_API_KEY"
+        name = local.llm_api_key_env
         value_source {
           secret_key_ref {
-            secret  = google_secret_manager_secret.openai.secret_id
+            secret  = google_secret_manager_secret.llm.secret_id
             version = "latest"
           }
         }
@@ -218,13 +238,13 @@ resource "google_cloud_run_v2_job" "seed" {
         }
         env {
           name  = "DATABASE_URL"
-          value = "postgresql+asyncpg://${google_sql_user.app.name}:${var.db_password}@/${google_sql_database.app.name}?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
+          value = "postgresql+asyncpg://${google_sql_user.app.name}:${random_password.db.result}@/${google_sql_database.app.name}?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
         }
         env {
-          name = "OPENAI_API_KEY"
+          name = local.llm_api_key_env
           value_source {
             secret_key_ref {
-              secret  = google_secret_manager_secret.openai.secret_id
+              secret  = google_secret_manager_secret.llm.secret_id
               version = "latest"
             }
           }

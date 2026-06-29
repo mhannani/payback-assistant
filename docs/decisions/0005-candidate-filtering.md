@@ -37,17 +37,19 @@ Introduce a **`CandidateFilter`** applied in the vector arm, on the raw cosine d
 **before fusion**. The default is an **absolute distance ceiling**: keep candidates with
 `distance ≤ CEILING`, drop the rest.
 
-The ceiling is tuned to this embedding model from a labelled sweep, not guessed:
+The ceiling is tuned to the active embedding model from a labelled sweep, not guessed. For the
+default OpenAI `text-embedding-3-small`, relevant matches cluster low and noise sits clearly higher,
+leaving a gap to place the ceiling in:
 
-| ceiling | günstige Windeln | pasta dinner | shampoo | Anker (no real match) |
-|--------:|:----------------:|:------------:|:-------:|:---------------------:|
-| **0.50** | 3 rel, **0 noise** | 10 rel, **0 noise** | 5 rel, **0 noise** | **0 kept** (honest) |
-| 0.55     | 3 rel, 0 noise   | 12 rel, **3 noise** | 5 rel, 0 noise | 0 kept |
-| 0.60     | 3 rel, 0 noise   | 13 rel, **6 noise** | 5 rel, **1 noise** | **1 noise** |
+| query | relevant distances | first noise |
+|---|---|---|
+| günstige Windeln | 0.36 – 0.48 (diapers) | 0.64 (shower gel) |
+| pasta dinner | 0.51 – 0.58 (pasta) | further out |
 
-**`CEILING = 0.50`** gives zero noise across all four query types while keeping every true
-match, and correctly returns nothing for a query with no real match. It favours precision
-over recall (a borderline item in the noise band may be dropped).
+**`CEILING = 0.60`** sits in that gap: it keeps the relevant set while dropping the noise tail, and
+returns nothing for a query with no real match. It favours precision over recall (a borderline item
+in the noise band may be dropped). The ceiling is bound to the model's distance scale, so it is
+re-derived (`make eval`) when the embedding provider changes.
 
 The filter governs **only the vector arm's vouching**. The keyword (full-text) arm is
 independent, so an exact keyword/brand match still surfaces via fusion even if the vector

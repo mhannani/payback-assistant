@@ -13,8 +13,29 @@ output "image_repository" {
   value       = aws_ecr_repository.api.repository_url
 }
 
-# Everything needed to launch the one-off seed task after apply.
-output "seed_command" {
-  description = "Run once after apply to load the catalog + embeddings into RDS."
-  value       = "aws ecs run-task --cluster ${aws_ecs_cluster.api.name} --task-definition ${aws_ecs_task_definition.seed.family} --launch-type FARGATE --network-configuration 'awsvpcConfiguration={subnets=[${join(",", var.subnet_ids)}],securityGroups=[${aws_security_group.service.id}],assignPublicIp=ENABLED}' --region ${var.region}"
+# Discrete pieces the seed step needs — `make seed-aws` assembles the run-task call from these,
+# so the (quoting-sensitive) network config isn't passed through a shell-fragile command string.
+output "cluster" {
+  description = "ECS cluster name for the one-off seed task."
+  value       = aws_ecs_cluster.api.name
+}
+
+output "seed_task" {
+  description = "Task-definition family for the one-off seed task."
+  value       = aws_ecs_task_definition.seed.family
+}
+
+output "service_security_group" {
+  description = "Security group the seed task runs under (reaches RDS)."
+  value       = aws_security_group.service.id
+}
+
+output "subnets_csv" {
+  description = "Comma-separated subnet ids for the seed task's network config."
+  value       = join(",", var.subnet_ids)
+}
+
+output "region" {
+  description = "Deploy region (for the seed task launch)."
+  value       = var.region
 }

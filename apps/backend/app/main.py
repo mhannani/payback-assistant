@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agent.checkpointer import checkpointer_pool
 from app.agent.graph import compile_agent
 from app.agent.runner import UnknownThreadError, resume_assist, start_assist
+from app.config import get_settings
 from app.db.session import get_session
 from app.retrieval.base import Retriever
 from app.retrieval.factory import get_retriever
@@ -52,6 +53,21 @@ def _retriever() -> Retriever:
     return get_retriever()
 
 
+@app.get("/", tags=["ops"])
+def root() -> dict[str, object]:
+    """A friendly landing response, so hitting the bare URL isn't a 404."""
+    return {
+        "name": "PAYBACK Assistant",
+        "description": "Multilingual product assistant across partner catalogs (dm · EDEKA · Amazon).",
+        "docs": "/docs",
+        "endpoints": {
+            "assist": "POST /assist",
+            "search": "GET /search?q=...",
+            "health": "GET /health",
+        },
+    }
+
+
 @app.get("/health", tags=["ops"])
 def health() -> dict[str, str]:
     """Liveness probe: confirms the service process is up and serving."""
@@ -72,6 +88,30 @@ async def ready(session: AsyncSession = Depends(get_session)) -> dict[str, str]:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="database unreachable"
         ) from exc
     return {"status": "ready"}
+
+
+@app.get("/config", tags=["ops"])
+def config() -> dict[str, object]:
+    """The active (non-secret) configuration — the pluggable strategy stack at a glance.
+
+    Useful when switching providers or A/B-testing strategies: you can see which embedder, model,
+    dimension, filter, and ranker are live without reading env. Never exposes keys or DB creds.
+    """
+    s = get_settings()
+    return {
+        "embeddings": {
+            "provider": s.embedding_provider,
+            "model": s.openai_model if s.embedding_provider == "openai" else s.vertex_model,
+            "dimension": s.embedding_dim,
+        },
+        "agent": {"llm_model": s.llm_model},
+        "retrieval": {
+            "backend": s.retriever_backend,
+            "filter_strategy": s.filter_strategy,
+            "filter_ceiling": s.filter_ceiling,
+            "ranking_strategy": s.ranking_strategy,
+        },
+    }
 
 
 @app.get("/search", tags=["search"])

@@ -18,7 +18,12 @@ output "bigquery_dataset" {
   value       = google_bigquery_dataset.vectors.dataset_id
 }
 
-output "seed_command" {
-  description = "Run once after apply to load the catalog + embeddings into Cloud SQL."
-  value       = "gcloud run jobs execute ${google_cloud_run_v2_job.seed.name} --region ${var.region} --wait"
+output "seed_job" {
+  description = "Cloud Run Job name for the one-off seed (init_db → seed → embed)."
+  value       = google_cloud_run_v2_job.seed.name
+}
+
+output "region" {
+  description = "Deploy region (for the seed job execution)."
+  value       = var.region
 }

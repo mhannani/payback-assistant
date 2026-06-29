@@ -19,14 +19,20 @@ resource "aws_ecr_repository" "api" {
   }
 }
 
-# ── Secret: the OpenAI key (runtime-injected, never in the image) ────
-resource "aws_secretsmanager_secret" "openai" {
-  name = "payback/openai-api-key"
+# ── Secret: the LLM/embedding provider key (runtime-injected, never in the image) ────
+# Provider-agnostic: the value is whatever provider's key, exposed to the container under the env
+# var name that provider expects (local.llm_api_key_env) — so switching OpenAI→Anthropic→Gemini is
+# config, not an infra change. (Vertex needs no key at all; it uses the task's IAM/ADC.)
+resource "aws_secretsmanager_secret" "llm" {
+  name = "payback/llm-api-key"
+  # Delete immediately on destroy (no 7–30 day recovery window), so a destroy→apply cycle can
+  # recreate the same-named secret without colliding with one "scheduled for deletion".
+  recovery_window_in_days = 0
 }
 
-resource "aws_secretsmanager_secret_version" "openai" {
-  secret_id     = aws_secretsmanager_secret.openai.id
-  secret_string = var.openai_api_key
+resource "aws_secretsmanager_secret_version" "llm" {
+  secret_id     = aws_secretsmanager_secret.llm.id
+  secret_string = var.llm_api_key
 }
 
 # ── Networking: security groups ─────────────────────────────────────
@@ -87,6 +93,13 @@ resource "aws_security_group" "db" {
 }
 
 # ── Serving database: Postgres + pgvector ───────────────────────────
+# The DB password is internal plumbing (only the app, inside the VPC, uses it), so Terraform
+# generates it — the deployer never has to invent or handle it. No special characters RDS rejects.
+resource "random_password" "db" {
+  length  = 32
+  special = false
+}
+
 resource "aws_db_subnet_group" "db" {
   name       = "payback-db"
   subnet_ids = var.subnet_ids
@@ -101,7 +114,7 @@ resource "aws_db_instance" "postgres" {
   allocated_storage = 20
   db_name           = "payback"
   username          = "payback"
-  password          = var.db_password
+  password          = random_password.db.result
 
   db_subnet_group_name   = aws_db_subnet_group.db.name
   vpc_security_group_ids = [aws_security_group.db.id]
@@ -167,7 +180,7 @@ resource "aws_iam_role_policy_attachment" "execution_managed" {
 data "aws_iam_policy_document" "read_secret" {
   statement {
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_secretsmanager_secret.openai.arn]
+    resources = [aws_secretsmanager_secret.llm.arn]
   }
 }
 
@@ -191,21 +204,30 @@ resource "aws_ecs_cluster" "api" {
 # The API and the one-off seed job share the same image, DB env, secret, and logs — only the
 # command differs. Factor the common bits so the two task definitions can't drift apart.
 locals {
+  # The env var name the provider's key must be exposed as is derived from llm_model's provider
+  # prefix (openai/… → OPENAI_API_KEY), so it can't drift from the chosen model. LiteLLM reads it.
+  llm_api_key_env = {
+    openai    = "OPENAI_API_KEY"
+    anthropic = "ANTHROPIC_API_KEY"
+    gemini    = "GEMINI_API_KEY"
+  }[split("/", var.llm_model)[0]]
+
   # The app builds its DB URL from POSTGRES_* parts (see app/config.py), so point those at RDS.
   container_env = [
     { name = "POSTGRES_HOST", value = aws_db_instance.postgres.address },
     { name = "POSTGRES_PORT", value = "5432" },
     { name = "POSTGRES_DB", value = aws_db_instance.postgres.db_name },
     { name = "POSTGRES_USER", value = aws_db_instance.postgres.username },
-    { name = "POSTGRES_PASSWORD", value = var.db_password },
+    { name = "POSTGRES_PASSWORD", value = random_password.db.result },
     # OpenAI by default — one key in Secrets Manager, no cross-cloud dependency.
     { name = "EMBEDDING_PROVIDER", value = var.embedding_provider },
     { name = "LLM_MODEL", value = var.llm_model },
   ]
 
-  # The OpenAI key is pulled from Secrets Manager at task start, not stored in the task def.
+  # The provider key is pulled from Secrets Manager at task start (under the provider's env var
+  # name), not stored in the task def.
   container_secrets = [
-    { name = "OPENAI_API_KEY", valueFrom = aws_secretsmanager_secret.openai.arn }
+    { name = local.llm_api_key_env, valueFrom = aws_secretsmanager_secret.llm.arn }
   ]
 
   log_options = {

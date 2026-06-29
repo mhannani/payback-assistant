@@ -15,9 +15,9 @@ This service is that single entry point. It accepts one free-text query and answ
 from every partner at once — bridging the catalogs at ingestion, matching meaning and exact terms across
 languages, and ranking so no partner is unfairly buried or boosted.
 
-Built so far: the recommendation engine — ingestion, indexing, and cross-catalog retrieval behind a
-`/search` API. The intent agent and cloud deployment build on the interfaces it already exposes; see
-[Status](#status).
+Three layers: the recommendation engine (ingestion, indexing, cross-catalog retrieval behind
+`/search`), a LangGraph intent agent over it (`/assist`), and cloud-native deployment (Terraform for
+GCP and AWS). See [Status](#status).
 
 ## Example
 
@@ -253,6 +253,7 @@ a paused clarify survives a restart and works across instances. See
 | `POST /assist` | Natural-language query → products, a clarifying question, or a partner hand-off |
 | `POST /assist/resume` | Answer a clarifying question and continue the conversation |
 | `GET /search` | Search across all partner catalogs (the mechanical primitive the agent drives) |
+| `GET /config` | The active (non-secret) config — embedder, model, dimension, filter, ranker |
 | `GET /health` | Liveness probe |
 | `GET /ready` | Readiness probe (checks the database) |
 
