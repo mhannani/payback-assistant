@@ -44,7 +44,8 @@ products, drawn from two different partners:
 
 (`id`, `description`, and `image_url` are also returned; trimmed here for readability.)
 
-Everything runs offline on a local Docker stack — no API keys required.
+Everything runs on a local Docker stack; embeddings and the agent use a managed provider, so an
+OpenAI (or Vertex) key is required.
 
 ---
 
@@ -104,7 +105,7 @@ Fields that can be compared (price, size) or filtered (tags, partner) become typ
 descriptive goes into a `description` that is embedded.
 
 ```text
- PARTNER FEEDS (disparate)                     INGESTION (offline · make seed + make embed)
+ PARTNER FEEDS (disparate)                     INGESTION (make seed + make embed)
  ┌─────────────────────────────────┐
  │ dm.json                         │           ┌───────────────────────────────────────────┐
  │   title · marke · price_eur     │──┐        │  Partner adapter  (ABC + 1 impl per partner)│
@@ -119,8 +120,8 @@ descriptive goes into a `description` that is embedded.
  │   asin · rating · blurb (no size)│          ┌───────────────────────────────────────────────┐
  └─────────────────────────────────┘          │      PostgreSQL + pgvector  (products table)     │
                                                │  ┌────────────────────────────┬───────────────┐ │
-   make embed ───────────────────────────────▶│  │ embedding VECTOR(384)       │ HNSW (cosine) │─┼─▶ semantic arm
-   (Embedder → 384-d vector + provenance)      │  │ search_tsv (German tsvector)│ GIN           │─┼─▶ keyword arm
+   make embed ───────────────────────────────▶│  │ embedding VECTOR(N)          │ HNSW (cosine) │─┼─▶ semantic arm
+   (Embedder → N-d vector + provenance)        │  │ search_tsv (German tsvector)│ GIN           │─┼─▶ keyword arm
                                                │  │ tags TEXT[]                 │ GIN           │─┼─▶ require_tags filter
                                                │  │ weight_g · volume_ml · price│ (typed cols)  │─┼─▶ price-per-unit sort
                                                │  └────────────────────────────┴───────────────┘ │
@@ -131,9 +132,9 @@ One `products` table backs everything: an HNSW index for semantic search, a GIN 
 `tsvector` for keyword search, and GIN indexes on `tags` and `attrs`. Schema and embedding details are in
 [docs/architecture.md](docs/architecture.md).
 
-Embeddings are provider-agnostic (`Embedder` interface). The default is a local multilingual
-sentence-transformer (`paraphrase-multilingual-MiniLM-L12-v2`, 384-d) baked into the image, so the
-service runs without credentials; Vertex AI and OpenAI are config-swappable.
+Embeddings are provider-agnostic (`Embedder` interface) and served by a managed provider — OpenAI
+(`text-embedding-3-small`, 1536-d) by default, Vertex AI config-swappable. The vector column is sized
+to the configured model's dimension (`EMBEDDING_DIM`), applied by `data.init_db`.
 
 ---
 
@@ -276,12 +277,13 @@ Response items (`ProductOut`): `id`, `partner`, `partner_name`, `name`, `brand`,
 
 ## Running locally
 
-Requires Docker. From the repository root:
+Requires Docker and an OpenAI key (`OPENAI_API_KEY` in `.env.dev`) — embeddings and the agent are
+managed-provider calls. From the repository root:
 
 ```bash
 make up      # start the API + Postgres/pgvector
-make seed    # load the partner catalogs
-make embed   # compute embeddings (required before search returns results)
+make seed    # create the schema (init_db) and load the partner catalogs
+make embed   # compute embeddings via the provider (required before search returns results)
 make test    # run the test suite
 ```
 
@@ -412,8 +414,7 @@ Makefile                 up / seed / embed / eval / demo / perf / test / lint
 
 - FastAPI, async SQLAlchemy 2.0, asyncpg
 - PostgreSQL + pgvector — HNSW cosine index and a German `tsvector` in one database
-- sentence-transformers (`paraphrase-multilingual-MiniLM-L12-v2`, 384-d), baked in for offline use;
-  Vertex AI / OpenAI swappable
+- Managed embeddings — OpenAI `text-embedding-3-small` (1536-d) by default, Vertex AI swappable
 - Babel (prices) and Pint (units) for ingestion
 - uv (dependencies), ruff (lint), pytest + pytest-asyncio (tests)
 - Docker for all commands
@@ -435,10 +436,9 @@ Makefile                 up / seed / embed / eval / demo / perf / test / lint
 
 ## Deployment
 
-Two images by design. The **dev image** bakes the local model for a zero-credential offline demo;
-the **production image** (multi-stage, non-root) is lean and cloud-first — it installs only the cloud
-embedder (Vertex / OpenAI), no torch, so inference is served off-host (the brief's "Vertex AI for
-model serving") and cold starts stay fast. It deploys two ways:
+The **production image** (multi-stage, non-root) is lean — embeddings are served by a managed
+provider (OpenAI / Vertex), so it carries no model and no torch, keeping the image small and cold
+starts fast (the brief's "Vertex AI for model serving"). It deploys two ways:
 
 **Container on a host.** `docker compose` or a single container on any server — the simplest path and
 how the live demo runs.
@@ -468,11 +468,12 @@ DB as a managed service, and exposes the service URL as an output. See each modu
 
 ## Limitations
 
-- **Cross-lingual coverage is uneven.** The local model maps many English↔German pairs (`pasta dinner` →
-  Spaghetti, `coffee` → Kaffee) but not all (`diaper` does not map to *Windeln*). German queries always
-  work. Query normalization belongs to the Task-2 agent, or a larger/cloud embedder via config.
+- **A key is required.** Embeddings and the agent are managed-provider calls, so the service needs an
+  OpenAI (or Vertex) key — there is no offline fallback. This is the production-realistic choice (no
+  in-process model to serve or scale).
 - **Small catalog** (~145 products). Enough to show the cross-catalog behaviour; the filter ceiling is
-  calibrated on a small labelled set and should be re-derived (`make eval`) for a larger corpus.
+  calibrated on a small labelled set for the active embedding model and should be re-derived
+  (`make eval`) for a larger corpus or a different provider.
 
 ---
 

@@ -17,7 +17,7 @@ or "Windeln"). Neither alone is sufficient:
 Run **two arms** and fuse them:
 
 1. **Semantic arm** — pgvector cosine similarity (HNSW index) over multilingual
-   sentence-transformer embeddings. Handles meaning and cross-lingual matching.
+   embeddings (OpenAI by default, Vertex swappable). Handles meaning and cross-lingual matching.
 2. **Keyword arm** — Postgres German full-text (`tsvector` / `ts_rank` /
    `websearch_to_tsquery`). Handles exact terms, brands, and German stemming
    ("Windeln" → "Windel").

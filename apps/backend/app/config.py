@@ -22,12 +22,15 @@ class Settings(BaseSettings):
     postgres_password: str = "payback"
 
     # ── Embeddings ──────────────────────────────────────────────────
-    # Which embedder serves vectors. 'local' (default) runs an offline
-    # multilingual model so the service needs no credentials; 'vertex' / 'openai'
-    # serve from those clouds (real impls, used only when configured).
-    embedding_provider: str = "local"
-    embedding_model_name: str = "paraphrase-multilingual-MiniLM-L12-v2"
-    # Cloud embedder settings — only read by the matching provider.
+    # Which managed provider serves vectors: 'openai' (default) or 'vertex'. Embedding is a
+    # cloud call, so a key/credentials are required (no offline model).
+    embedding_provider: str = "openai"
+    # Vector dimension of the products.embedding column — one declared dimension for the
+    # deployment. Must match the active embedder's model (OpenAI text-embedding-3-small = 1536,
+    # Vertex text-multilingual-embedding-002 = 768). It sizes the schema column (db/init.sql,
+    # applied by data.init_db) and the ORM column; the factory rejects a mismatching provider.
+    embedding_dim: int = 1536
+    # Provider settings — only read by the matching provider.
     vertex_project: str | None = None
     vertex_location: str = "europe-west3"
     vertex_model: str = "text-multilingual-embedding-002"
@@ -43,8 +46,10 @@ class Settings(BaseSettings):
 
     # ── Retrieval tuning ────────────────────────────────────────────
     # Max cosine distance the 'absolute' filter keeps. Bound to the embedding model's
-    # distance scale — re-derive (via `make eval`) if EMBEDDING_PROVIDER changes.
-    filter_ceiling: float = 0.50
+    # distance scale — re-derive (via `make eval`) if EMBEDDING_PROVIDER changes. Calibrated for
+    # OpenAI text-embedding-3-small: relevant matches fall ~0.36–0.58, noise ~0.64+, so 0.60 sits
+    # in the gap.
+    filter_ceiling: float = 0.60
     # Min ts_rank the keyword arm keeps, so its weak tail doesn't pollute fusion the way
     # the vector arm's tail (cut by filter_ceiling) does. 0.0 keeps every @@-match.
     fulltext_min_rank: float = 0.0

@@ -26,7 +26,7 @@ class Embedder(ABC):
     @property
     @abstractmethod
     def model_id(self) -> str:
-        """Stable identifier of the producing model, e.g. 'local:MiniLM-L12-v2'."""
+        """Stable identifier of the producing model, e.g. 'openai:text-embedding-3-small'."""
 
     @property
     @abstractmethod

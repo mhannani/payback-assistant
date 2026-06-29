@@ -17,13 +17,12 @@ breaks at both extremes, which we verified on this catalog:
 An absolute ceiling fixes both: a query with no good match simply keeps (almost) nothing —
 an honest "no relevant results" — while good matches always pass.
 
-The default ceiling (0.50) is calibrated on a small labelled set for THIS embedding model
-(paraphrase-multilingual-MiniLM-L12-v2), not guessed — a distance sweep showed ~0.50 keeps
-true matches while 0.55–0.60 start admitting noise; `make eval` re-derives it on a wider set.
-It is bound to the model's cosine-distance scale, so it MUST be re-calibrated if the embedding
-provider changes. It is configurable (``settings.filter_ceiling``) precisely so that re-tuning
-is a config change, not a code change. It trades a little recall for precision — a borderline
-item in the noise band is dropped.
+The default ceiling (0.60) is calibrated for THIS embedding model (OpenAI
+text-embedding-3-small), not guessed — a distance sweep showed relevant matches falling ~0.36–0.58
+and noise ~0.64+, so 0.60 sits in the gap; `make eval` re-derives it on a wider set. It is bound to
+the model's cosine-distance scale, so it MUST be re-calibrated if the embedding provider changes. It
+is configurable (``settings.filter_ceiling``) precisely so that re-tuning is a config change, not a
+code change. It trades a little recall for precision — a borderline item in the noise band is dropped.
 """
 
 from __future__ import annotations
@@ -32,12 +31,10 @@ from collections.abc import Sequence
 
 from app.retrieval.filtering.base import CandidateFilter, ScoredCandidate
 
-# Tuned from a labelled distance sweep on this model (see module docstring).
-DEFAULT_CEILING = 0.50
-
-
 class AbsoluteCeilingFilter(CandidateFilter):
-    def __init__(self, ceiling: float = DEFAULT_CEILING) -> None:
+    def __init__(self, ceiling: float) -> None:
+        # The ceiling is owned by config (settings.filter_ceiling) — the single source of truth —
+        # and threaded in by the factory, so it isn't duplicated as a default here.
         self._ceiling = ceiling
 
     def filter(self, candidates: Sequence[ScoredCandidate]) -> list[ScoredCandidate]:

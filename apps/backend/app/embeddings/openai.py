@@ -1,8 +1,7 @@
 """OpenAI embedder.
 
-A real implementation behind the same interface as the local embedder. Not exercised
-in the default setup (no API key); the SDK is imported inside ``__init__`` so this
-module loads even when ``openai`` is not installed.
+One of the two managed providers behind the ``Embedder`` interface (the default). The SDK is
+imported inside ``__init__`` so this module loads even before a client is constructed.
 """
 
 from __future__ import annotations

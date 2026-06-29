@@ -4,10 +4,12 @@
 
 ## Context
 
-The brief's preferred production stack lists **BigQuery (for vector search)** on GCP. The
-deliverable must also **run offline** for a reviewer (`make up`), which BigQuery cannot —
-it needs a GCP project, a dataset, and credentials. We need to honour the production
-preference *without* breaking the runnable demo.
+The brief's preferred production stack lists **BigQuery (for vector search)** on GCP. But the
+assistant serves queries in **real time**, and BigQuery is a warehouse (OLAP) — seconds-latency,
+pay-per-scan, no traditional indexes — so it can't be the serving store; it also needs a GCP
+project + dataset to run at all. We need a low-latency store for the demo while honouring the
+production preference. (Embeddings themselves are a managed-provider call regardless of the store —
+see [0004](0004-provider-agnostic-embeddings.md).)
 
 A second consideration: the hard part of the problem — fair ranking across disparate
 catalogs (see [0002](0002-fair-cross-partner-ranking.md)) — is **application logic that
@@ -18,9 +20,9 @@ solves it for you; it must be written regardless of the store.
 
 Put retrieval behind a small **`Retriever` interface**:
 
-- **`PgVectorRetriever`** — the one fully-working implementation. Postgres + pgvector runs
-  the demo offline with millisecond latency, no credentials, and reuses the Postgres that
-  already holds the catalog.
+- **`PgVectorRetriever`** — the one fully-working implementation. Postgres + pgvector serves
+  queries with millisecond latency and reuses the Postgres that already holds the catalog, so
+  the demo needs no store beyond the one container.
 - **BigQuery** is the documented production path behind the *same* interface. The brief
   scopes BigQuery to *vector search* specifically, so the production split is: BigQuery
   returns nearest-neighbour ids; a low-latency store still serves the catalog rows.
@@ -36,12 +38,13 @@ any backend — porting to BigQuery rewrites only the two candidate queries
   solve the fair-ranking problem. pgvector reuses the existing Postgres.
 - **BigQuery is a warehouse (OLAP)** — seconds-latency, serverless, no traditional indexes,
   pay-per-scan. It is the right tool for batch embedding and warehouse-scale similarity,
-  but not for serving a real-time assistant directly. Implementing it fully now would need
-  a live GCP project and break the offline demo, for an *optional* part of the brief.
+  but not for serving a real-time assistant directly. Implementing it fully now would need a
+  live GCP project, for an *optional* part of the brief.
 
 ## Consequences
 
-- The demo is runnable offline; the production preference is honoured as a documented seam.
+- The demo runs on a single Postgres container; the production preference is honoured as a
+  documented seam.
 - The valuable ranking logic is engine-portable by construction.
 - Adding BigQuery later is one new class implementing `Retriever`; the API and agent do not
   change.

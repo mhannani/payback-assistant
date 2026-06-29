@@ -16,6 +16,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import get_settings
 from app.db.models import Product
 from app.embeddings import Embedder
 from app.retrieval.base import Retriever
@@ -133,7 +134,9 @@ class PgVectorRetriever(Retriever):
     ) -> None:
         self._embedder = embedder
         self._ranker = ranker or get_ranker()
-        self._filter = candidate_filter or get_candidate_filter()
+        # When no filter is injected, build the configured default (ceiling from settings — the
+        # single source of truth for the calibrated value).
+        self._filter = candidate_filter or get_candidate_filter(ceiling=get_settings().filter_ceiling)
         self._fulltext_min_rank = fulltext_min_rank
 
     async def search(

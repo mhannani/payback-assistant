@@ -1,13 +1,11 @@
 """Vertex AI embedder.
 
-A real implementation behind the same interface as the local embedder, so production
-can serve embeddings from Vertex by config alone. It is not exercised in the default
-setup (which needs no cloud credentials); the SDK is imported inside ``__init__`` so
-this module loads even when ``google-cloud-aiplatform`` is not installed.
+The GCP-native provider behind the ``Embedder`` interface (OpenAI is the default). The SDK is
+imported inside ``__init__`` so this module loads even before a client is constructed.
 
-Auth: Vertex uses Google Application Default Credentials, not an API key — on Cloud Run
-the attached service account authenticates automatically (no secret to store), so this
-embedder takes a project + location rather than a key.
+Auth: Vertex uses Google Application Default Credentials, not an API key — on Cloud Run the
+attached service account authenticates automatically (no secret to store), so this embedder takes
+a project + location rather than a key.
 """
 
 from __future__ import annotations

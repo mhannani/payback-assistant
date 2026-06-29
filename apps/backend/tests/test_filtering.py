@@ -64,9 +64,9 @@ def test_relative_fails_when_best_is_excellent() -> None:
 
 
 def test_factory_default_is_absolute() -> None:
-    assert isinstance(get_candidate_filter(), AbsoluteCeilingFilter)
+    assert isinstance(get_candidate_filter(ceiling=0.6), AbsoluteCeilingFilter)
 
 
 def test_factory_unknown_strategy_raises() -> None:
     with pytest.raises(ValueError, match="unknown filter strategy"):
-        get_candidate_filter("nope")
+        get_candidate_filter("nope", ceiling=0.6)

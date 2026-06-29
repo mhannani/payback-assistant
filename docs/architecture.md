@@ -29,7 +29,7 @@ they render in any Markdown viewer.
                               │ products + 4 indexes  │  lookups  │ (embed→arms→fuse→rank)  │
                               └──────────┬───────────┘           └────────────┬────────────┘
                                          ▲                                    │
-                              make embed │ 384-d vector + provenance          ▼
+                              make embed │ N-d vector + provenance            ▼
                                          │                          list[ProductOut] → client
 ```
 
@@ -75,7 +75,7 @@ One `products` table backs **both** retrieval arms plus filtering — no separat
   ├─ name · description · price_cents · currency · image_url
   ├─ tags        TEXT[]          ──────▶  GIN index        →  require_tags filter
   ├─ weight_g · volume_ml        (typed columns)           →  price-per-unit sort
-  ├─ embedding   VECTOR(384)     ──────▶  HNSW (cosine)     →  SEMANTIC arm
+  ├─ embedding   VECTOR(N)       ──────▶  HNSW (cosine)     →  SEMANTIC arm
   ├─ embedding_model             (provenance: which model produced the vector)
   ├─ search_tsv  TSVECTOR        ──────▶  GIN index         →  KEYWORD arm
   │              (generated, German, always in sync with name+description)
@@ -97,14 +97,13 @@ column, so the German full-text vector can never drift out of sync with `name`/`
   ┌──────────────────────────────────────────────────────────┐
   │ Embedder (ABC)                                            │
   │   embed_texts() ── L2-normalize  (owned by the base)      │
-  │        ├── LocalEmbedder   MiniLM multilingual · 384-d ·  │   ← EMBEDDING_PROVIDER
-  │        │                   offline  (default)            │
-  │        ├── VertexEmbedder  768-d                          │
-  │        └── OpenAIEmbedder  1536-d                         │
+  │        ├── OpenAIEmbedder  text-embedding-3-small · 1536-d │   ← EMBEDDING_PROVIDER
+  │        │                   (default)                      │
+  │        └── VertexEmbedder  multilingual-002 · 768-d       │
   └───────────────────────┬──────────────────────────────────┘
                           ▼
               factory dimension guard
-              (reject at startup if ≠ schema's 384-d)
+              (reject at startup if ≠ configured EMBEDDING_DIM)
                           │
                           ▼
               unit vector → products.embedding

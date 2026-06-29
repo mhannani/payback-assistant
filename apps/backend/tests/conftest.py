@@ -21,13 +21,13 @@ from app.config import get_settings
 from app.embeddings import Embedder, get_embedder
 from app.main import app
 
-# Agent tests call a real LLM. They are skipped unless an OpenAI key is present, so the suite
-# stays green in environments without credentials (CI, a fresh clone) while still giving real
-# end-to-end coverage locally. The agent's pure logic is covered separately and always runs
-# (see test_agent_logic.py).
-requires_llm = pytest.mark.skipif(
+# Embeddings and the agent LLM are both managed cloud calls keyed by OPENAI_API_KEY. Tests that
+# touch them are skipped unless the key is present, so the suite stays green without credentials
+# (CI, a fresh clone) while giving real end-to-end coverage locally. Pure logic is covered
+# separately and always runs (test_agent_logic.py, the hermetic embedder contract tests).
+requires_openai = pytest.mark.skipif(
     not os.environ.get("OPENAI_API_KEY"),
-    reason="needs OPENAI_API_KEY — agent tests call a live LLM",
+    reason="needs OPENAI_API_KEY — embeddings and the agent call live OpenAI",
 )
 
 
@@ -83,7 +83,13 @@ async def api_client() -> AsyncIterator[AsyncClient]:
 
 @pytest.fixture(scope="session")
 def embedder() -> Iterator[Embedder]:
-    """One embedder for the whole test session (loading the model is the slow part)."""
+    """The configured (cloud) embedder for tests that compute real vectors.
+
+    Embedding is a managed cloud call, so any test using this fixture needs a key; skip cleanly
+    without one so the suite stays green in a credential-less environment.
+    """
+    if not os.environ.get("OPENAI_API_KEY"):
+        pytest.skip("needs OPENAI_API_KEY — embedding is a live cloud call")
     yield get_embedder()
 
 

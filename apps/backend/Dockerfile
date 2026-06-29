@@ -1,9 +1,8 @@
 # syntax=docker/dockerfile:1
 #
-# Production image — lean and cloud-first. It installs the cloud embedder extra (Vertex / OpenAI)
-# and NOT the local one, so torch and the bundled model are absent: a small image with fast cold
-# starts, with inference served off-host (the brief's "Vertex AI for model serving"). The offline,
-# torch-based local embedder is the dev image's job (Dockerfile.dev), used for the runnable demo.
+# Production image — lean. Embeddings are served by a managed provider (OpenAI / Vertex), so the
+# image carries no model and no torch: a small image with fast cold starts, inference served
+# off-host (the brief's "Vertex AI for model serving").
 
 # ── Builder: resolve and install dependencies with uv ───────────────
 FROM python:3.12-slim AS builder
@@ -15,11 +14,10 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 WORKDIR /app
 
-# Install dependencies first (cached unless the lockfile changes). `--extra cloud` adds the Vertex
-# and OpenAI SDKs; `--no-dev` and no `--extra local` keep torch/sentence-transformers out.
+# Install dependencies first (cached unless the lockfile changes).
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev --extra cloud
+    uv sync --frozen --no-install-project --no-dev
 
 # ── Runtime: slim image with only what we need to serve ─────────────
 FROM python:3.12-slim AS runtime

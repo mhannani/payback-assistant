@@ -7,7 +7,7 @@ comparison.
 
 from __future__ import annotations
 
-from app.retrieval.filtering.absolute import DEFAULT_CEILING, AbsoluteCeilingFilter
+from app.retrieval.filtering.absolute import AbsoluteCeilingFilter
 from app.retrieval.filtering.autocut import AutoCutFilter
 from app.retrieval.filtering.base import CandidateFilter
 from app.retrieval.filtering.none import NoFilter
@@ -16,9 +16,7 @@ from app.retrieval.filtering.relative import RelativeThresholdFilter
 DEFAULT_STRATEGY = "absolute"
 
 
-def get_candidate_filter(
-    strategy: str = DEFAULT_STRATEGY, *, ceiling: float = DEFAULT_CEILING
-) -> CandidateFilter:
+def get_candidate_filter(strategy: str = DEFAULT_STRATEGY, *, ceiling: float) -> CandidateFilter:
     """Build the candidate filter named by ``strategy`` (``ceiling`` tunes 'absolute')."""
     match strategy:
         case "absolute":

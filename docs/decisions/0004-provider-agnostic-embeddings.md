@@ -1,55 +1,58 @@
-# 0004 — Provider-agnostic embeddings: local default, cloud-swappable
+# 0004 — Provider-agnostic embeddings: managed cloud providers
 
-**Status:** Accepted · **Date:** 2026-06-27
+**Status:** Accepted · **Date:** 2026-06-27 (revised 2026-06-29)
 
 ## Context
 
-The assistant needs text embeddings to power semantic search across German and English
-queries. The deliverable must **run offline** for a reviewer (`make up`, no credentials),
-while production on GCP would likely serve embeddings from **Vertex AI**. We also want to
-avoid hard-wiring a single vendor.
+The assistant needs text embeddings to power semantic search across German and English queries.
+Production on GCP would serve embeddings from **Vertex AI**; we also want to avoid hard-wiring a
+single vendor. Embedding is therefore treated as a managed-provider call, not an in-process model —
+which matches how embeddings are served at scale (a managed API or a dedicated serving tier, not a
+model bundled into the API container).
 
 ## Decision
 
-An **`Embedder` interface** with the provider chosen by config:
+An **`Embedder` interface** with the provider chosen by config (`embedding_provider`):
 
-- **`LocalEmbedder` (default):** a multilingual sentence-transformers model
-  (`paraphrase-multilingual-MiniLM-L12-v2`, 384-d), baked into the Docker image so it runs
-  offline with no credentials and matches German↔English out of the box.
-- **`VertexEmbedder` / `OpenAIEmbedder`:** real implementations behind the same interface
-  (SDK imported lazily), selected by `embedding_provider` — used in production, not exercised
-  in the offline demo.
+- **`OpenAIEmbedder` (default):** `text-embedding-3-small` (1536-d).
+- **`VertexEmbedder`:** `text-multilingual-embedding-002` (768-d), the GCP-native option.
+
+Both are thin SDK adapters (the SDK is imported lazily, so only the configured client initializes).
+There is no in-process model and no torch in the image — inference is served off-host, which keeps
+the production image small and cold starts fast, and is why the brief separates "Vertex for model
+serving" from "Cloud Run for the API".
 
 Two correctness rules live in the contract, not in each impl:
 - **Normalization is owned by the base class.** Implementations return raw vectors; the base
   L2-normalizes them, so every provider matches the cosine HNSW index and none can silently
   regress search quality.
-- **The factory rejects a dimension mismatch at construction** — a provider whose vectors
-  don't fit the fixed `Vector(384)` column fails loudly at startup, not mid-embed.
+- **The factory rejects a dimension mismatch at construction** — a provider whose vectors don't
+  match the declared `EMBEDDING_DIM` fails loudly at startup, not mid-embed.
 
-Each product also records **which model produced its vector** (`embedding_model`), so the
-embed step re-embeds when the provider changes and retrieval rejects a stale-model mismatch
-(vectors from different models are not comparable).
+**One declared dimension.** `EMBEDDING_DIM` (config) sizes the `embedding` column — applied by
+`data.init_db`, which substitutes it into `db/init.sql` — and the ORM column, with the factory
+guard enforcing it against the active provider. No dimension is hardcoded or duplicated.
+
+Each product records **which model produced its vector** (`embedding_model`), so the embed step
+re-embeds when the provider changes and retrieval rejects a stale-model mismatch (vectors from
+different models are not comparable).
 
 ## Why this design
 
-- **Runnable + production-aligned:** local-default keeps the demo offline; Vertex is a
-  config flip for production — honouring the GCP preference without breaking the demo, and
-  without vendor lock-in.
-- **Cold-start note (for deployment):** the local model pulls in torch (~heavy image). In
-  production, flipping to Vertex moves inference off the API container, which is exactly why
-  the brief separates "Vertex for model serving" from "Cloud Run for the API"; making the
-  local deps an optional group keeps the production image lean.
+- **Production-aligned, no lock-in:** swapping OpenAI ↔ Vertex is a config change (+ a re-embed and
+  a matching `EMBEDDING_DIM`), guarded so it can't silently corrupt search.
+- **Lean image:** no model weights or torch to ship, so the production image stays small and starts
+  fast — the cost is that a key/credentials are required (there is no offline fallback).
 
 ## Consequences
 
-- Switching providers is a config change (+ re-embed), guarded so it can't silently corrupt
-  search.
-- MiniLM-384 is a deliberate cost/latency/offline choice for a lightweight assistant; a
-  larger model is a tunable, at the cost of image size and latency.
+- The service requires a provider key; there is no zero-credential mode.
+- The `absolute` filter ceiling is bound to the active model's cosine-distance scale and is
+  re-derived (`make eval`) when the provider changes — see
+  [0002](0002-fair-cross-partner-ranking.md) / the filter docs.
 
 ## References
 
 - pgvector cosine / HNSW: <https://github.com/pgvector/pgvector>
-- sentence-transformers multilingual models: <https://www.sbert.net/docs/pretrained_models.html>
+- OpenAI embeddings: <https://platform.openai.com/docs/guides/embeddings>
 - Vertex AI text embeddings: <https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings>

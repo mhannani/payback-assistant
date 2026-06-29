@@ -29,10 +29,14 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-# Embedding dimensionality. Must match VECTOR(N) in db/init.sql; the embedder factory
-# (app/embeddings/factory.py) rejects any provider whose output dimension differs.
-# Declared here too because a column needs a concrete size at class-definition time.
-EMBEDDING_DIM = 384
+from app.config import get_settings
+
+# Embedding dimensionality — the single declared dimension for this deployment. The same value
+# sizes the physical column (db/init.sql, filled by data.init_db) and is enforced against the
+# active embedder by the factory. A SQLAlchemy column needs a concrete size at class-definition
+# time, so it is read from settings here (set EMBEDDING_DIM to your model's dimension:
+# OpenAI text-embedding-3-small = 1536, Vertex = 768).
+EMBEDDING_DIM = get_settings().embedding_dim
 
 
 class Base(DeclarativeBase):
@@ -127,7 +131,7 @@ class Product(Base):
     embedding: Mapped[list[float] | None] = mapped_column(
         Vector(EMBEDDING_DIM), nullable=True
     )
-    # Which embedder produced `embedding` (e.g. 'local:paraphrase-multilingual-MiniLM-L12-v2').
+    # Which embedder produced `embedding` (e.g. 'openai:text-embedding-3-small').
     # Vectors from different models aren't comparable, so this lets the embed step
     # re-embed when the provider changes and lets retrieval reject a stale mismatch.
     embedding_model: Mapped[str | None] = mapped_column(String(120), nullable=True)

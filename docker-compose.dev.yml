@@ -7,7 +7,8 @@ services:
       - "5433:5432"           # host 5433 to avoid clashing with a local Postgres
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./apps/backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      # Schema is applied by `data.init_db` (make seed runs it first), the same path dev and cloud
+      # use — not the DB image's init hook, so there's one schema mechanism everywhere.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U payback -d payback"]
       interval: 5s

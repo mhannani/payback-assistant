@@ -14,7 +14,7 @@ DEV := docker compose -f docker-compose.dev.yml
 EXEC_API := docker exec payback_api
 
 .DEFAULT_GOAL := help
-.PHONY: help up down logs fetch seed embed eval demo perf test lint
+.PHONY: help up down logs fetch init seed embed eval demo perf test lint
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -32,7 +32,10 @@ logs: ## Tail the API logs
 fetch: ## Refresh the Open Food Facts catalog snapshot (needs network)
 	$(EXEC_API) python -m data.fetch_off
 
-seed: ## Load the committed catalog snapshots into the database
+init: ## Create the database schema (db/init.sql; idempotent) — the same path dev and cloud use
+	$(EXEC_API) python -m data.init_db
+
+seed: init ## Create the schema then load the committed catalog snapshots
 	$(EXEC_API) python -m data.seed
 
 embed: ## Compute embeddings for products (run after seed; idempotent)
