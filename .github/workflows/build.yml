@@ -4,6 +4,11 @@
 # the cloud (Cloud Run / ECS Fargate), and this workflow produces the image those services pull.
 # GHCR already exists (it's GitHub's), so there is no "registry created by terraform, but the image
 # must exist before the service starts" ordering problem — both clouds pull the same published image.
+#
+# A `test` gate runs first and `build-and-push` `needs: test`, so a broken commit never publishes an
+# image. The gate mirrors `make test` / `make lint` (ruff + pytest) and `terraform validate` for both
+# clouds. It needs no provider secret: the LLM-gated tests are marked `requires_provider` and skip
+# without a key (see apps/backend/tests/conftest.py); the keyless DB-backed tests still run.
 
 name: build
 
@@ -16,8 +21,97 @@ env:
   IMAGE: ghcr.io/${{ github.repository }} # ghcr.io/mhannani/payback-assistant
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # pgvector/pgvector:pg16 (not plain postgres:16) — db/init.sql does `CREATE EXTENSION vector`, so
+    # the schema needs pgvector present, the same image the dev stack uses (docker-compose.dev.yml).
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: payback
+          POSTGRES_USER: payback
+          POSTGRES_PASSWORD: payback
+        ports:
+          - 5432:5432
+        # Wait until Postgres accepts connections before the steps run.
+        options: >-
+          --health-cmd "pg_isready -U payback -d payback"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    # config.py builds DATABASE_URL from these POSTGRES_* parts; the service is reachable on
+    # localhost:5432 from the job (host-mapped above).
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: payback
+      POSTGRES_USER: payback
+      POSTGRES_PASSWORD: payback
+
+    defaults:
+      run:
+        working-directory: apps/backend # where pyproject.toml / uv.lock / the tests live
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      # Resolve the exact locked dependency set (incl. dev tools: ruff, pytest).
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # `make lint` → `ruff check .`
+      - name: Lint
+        run: uv run ruff check .
+
+      # The keyless DB-backed tests (German full-text) expect the seeded catalog, so build the schema
+      # and load it first — the same init → seed path the dev stack and cloud use (Makefile / seeder).
+      # Embeddings stay NULL here (computed in a separate, key-gated step), so seeding needs no key.
+      - name: Initialize schema and seed catalog
+        run: |
+          uv run python -m data.init_db
+          uv run python -m data.seed
+
+      # `make test` → `python -m pytest`. The LLM/embedding-gated tests skip without a provider key.
+      - name: Test
+        run: uv run python -m pytest
+
+  terraform-validate:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        cloud: [gcp, aws] # one self-contained module per cloud under infra/<cloud>/
+
+    defaults:
+      run:
+        working-directory: infra/${{ matrix.cloud }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # fmt is repo-wide style; run it once (from the matched dir, recursive) so drift fails the gate.
+      - name: Check formatting
+        run: terraform fmt -check -recursive
+
+      # -backend=false: validate the config + provider schemas without touching remote state or creds.
+      - name: Init
+        run: terraform init -backend=false
+
+      - name: Validate
+        run: terraform validate
+
   build-and-push:
     runs-on: ubuntu-latest
+    needs: [test, terraform-validate] # never publish an image from a commit that fails the gate
     permissions:
       contents: read
       packages: write # required to push to GHCR
