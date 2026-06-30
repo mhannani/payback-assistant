@@ -1,15 +1,16 @@
 name: CI
 
-# Pre-merge gate: build both Docker images (api + web) so a build break is caught HERE, before the
-# deploy workflow ever runs. This is what would have caught the `npm ci` ERESOLVE that only surfaces
-# in the Docker build (not in a plain `npm run build`). Runs on PRs into the showcase branch and on
-# direct pushes to it — fast, no secrets, no registry push (build-only, `push: false`).
+# Pre-merge gate for PULL REQUESTS: build both Docker images (api + web) so a build break is caught
+# in review, before merge. This is what would have caught the `npm ci` ERESOLVE that only surfaces in
+# the Docker build (not in a plain `npm run build`). Build-only, no push, no secrets.
+#
+# NOTE: this is PR-only on purpose. On a direct push to the showcase branch the DEPLOY workflow runs,
+# and its own `build` job is the gate there (`deploy` needs `build.result == 'success'`) — so a build
+# break already blocks that deploy. Running CI on push too would just double-build in parallel.
 
 on:
   pull_request:
     branches: [feat/showcase-widget, main]
-  push:
-    branches: [feat/showcase-widget]
   workflow_dispatch: {}
 
 concurrency:

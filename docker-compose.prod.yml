@@ -68,11 +68,14 @@ services:
       - payback_internal
       - traefik
     restart: unless-stopped
+    # The slim image has no curl/wget — use Python (which is in the image) for the healthcheck.
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      test:
+        ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
       interval: 15s
       timeout: 5s
       retries: 5
+      start_period: 10s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.payback-api.rule=Host(`api.payback.mhannani.me`)"

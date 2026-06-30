@@ -169,13 +169,16 @@ jobs:
               exit 1
             fi
 
+            # Poll Docker's own health state (the compose healthcheck uses Python — the slim image
+            # has no curl). Wait up to ~60s for the api to report healthy.
             echo "Waiting for API health…"
             for i in $(seq 1 30); do
-              docker exec payback_api_prod curl -sf http://localhost:8000/health >/dev/null 2>&1 && break
+              status=$(docker inspect -f '{{.State.Health.Status}}' payback_api_prod 2>/dev/null || echo starting)
+              [ "$status" = "healthy" ] && break
               sleep 2
             done
-            docker exec payback_api_prod curl -sf http://localhost:8000/health >/dev/null 2>&1 \
-              || { echo "API did not become healthy" >&2; exit 1; }
+            [ "$(docker inspect -f '{{.State.Health.Status}}' payback_api_prod 2>/dev/null)" = "healthy" ] \
+              || { echo "API did not become healthy" >&2; docker logs payback_api_prod 2>&1 | tail -30 >&2; exit 1; }
 
             echo "Deploy complete."
           DEPLOY_SCRIPT
