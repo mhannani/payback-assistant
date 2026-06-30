@@ -7,7 +7,13 @@ import uuid
 from sqlalchemy import select
 
 from app.db.models import EMBEDDING_DIM, Partner, Product
-from data.embed import embed_outdated
+from data.embed import embed_into
+from data.sinks import PostgresEmbeddingSink
+
+
+async def _embed(session, embedder) -> int:
+    """Embed outdated rows into Postgres (the pgvector path these tests exercise)."""
+    return await embed_into(session, embedder, PostgresEmbeddingSink(session))
 
 
 async def _make_product(session, *, embedding=None, embedding_model=None) -> Product:
@@ -33,7 +39,7 @@ async def test_embed_fills_null_embeddings(db_session, embedder) -> None:
     product = await _make_product(db_session)
     assert product.embedding is None
 
-    count = await embed_outdated(db_session, embedder)
+    count = await _embed(db_session, embedder)
 
     assert count >= 1
     refreshed = await db_session.get(Product, product.id)
@@ -44,10 +50,10 @@ async def test_embed_fills_null_embeddings(db_session, embedder) -> None:
 
 async def test_embed_is_idempotent(db_session, embedder) -> None:
     await _make_product(db_session)
-    await embed_outdated(db_session, embedder)
+    await _embed(db_session, embedder)
 
     # Nothing is outdated on a second pass with the same provider.
-    second = await embed_outdated(db_session, embedder)
+    second = await _embed(db_session, embedder)
     assert second == 0
 
 
@@ -59,7 +65,7 @@ async def test_embed_reembeds_on_model_change(db_session, embedder) -> None:
         embedding_model="stale:other-model",
     )
 
-    count = await embed_outdated(db_session, embedder)
+    count = await _embed(db_session, embedder)
 
     assert count >= 1
     refreshed = await db_session.get(Product, product.id)
@@ -68,7 +74,7 @@ async def test_embed_reembeds_on_model_change(db_session, embedder) -> None:
 
 async def test_embedding_roundtrips_through_pgvector(db_session, embedder) -> None:
     product = await _make_product(db_session)
-    await embed_outdated(db_session, embedder)
+    await _embed(db_session, embedder)
 
     # Read back via a fresh query to prove asyncpg/pgvector serialization works.
     stored = (await db_session.scalars(select(Product).where(Product.id == product.id))).one()

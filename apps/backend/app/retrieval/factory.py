@@ -14,8 +14,9 @@ from app.config import Settings, get_settings
 from app.embeddings import Embedder, get_embedder
 from app.retrieval.base import Retriever
 from app.retrieval.filtering import get_candidate_filter
-from app.retrieval.pgvector import PgVectorRetriever
+from app.retrieval.hybrid import HybridRetriever
 from app.retrieval.ranking import get_ranker
+from app.retrieval.vector_index import BigQueryVectorIndex, PgVectorIndex, VectorIndex
 
 
 @lru_cache
@@ -28,22 +29,35 @@ def get_cached_retriever() -> Retriever:
     return get_retriever()
 
 
+def _vector_index(s: Settings, embedder: Embedder) -> VectorIndex:
+    """The semantic-search index for the configured backend — the only part that varies."""
+    match s.retriever_backend:
+        case "pgvector":
+            return PgVectorIndex()
+        case "bigquery":
+            # Fail fast if the GCP prerequisite is unset, the way the embedder factory validates
+            # before serving rather than 500-ing on first query.
+            if not s.vertex_project:
+                raise ValueError(
+                    "retriever_backend=bigquery requires VERTEX_PROJECT (the GCP project) to be set."
+                )
+            return BigQueryVectorIndex(s, embedder)
+        case other:
+            raise ValueError(
+                f"unknown retriever_backend {other!r}; expected pgvector or bigquery"
+            )
+
+
 def get_retriever(
     embedder: Embedder | None = None, settings: Settings | None = None
 ) -> Retriever:
-    """Assemble the retriever named by ``retriever_backend`` with its filter and ranker."""
+    """Assemble the hybrid retriever with the configured vector index, filter, and ranker."""
     s = settings or get_settings()
     embedder = embedder or get_embedder(s)
-    candidate_filter = get_candidate_filter(s.filter_strategy, ceiling=s.filter_ceiling)
-    ranker = get_ranker(s.ranking_strategy)
-
-    match s.retriever_backend:
-        case "pgvector":
-            return PgVectorRetriever(
-                embedder,
-                ranker=ranker,
-                candidate_filter=candidate_filter,
-                fulltext_min_rank=s.fulltext_min_rank,
-            )
-        case other:
-            raise ValueError(f"unknown retriever_backend {other!r}; expected pgvector")
+    return HybridRetriever(
+        embedder,
+        _vector_index(s, embedder),
+        ranker=get_ranker(s.ranking_strategy),
+        candidate_filter=get_candidate_filter(s.filter_strategy, ceiling=s.filter_ceiling),
+        fulltext_min_rank=s.fulltext_min_rank,
+    )

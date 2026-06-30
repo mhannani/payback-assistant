@@ -6,6 +6,7 @@ rest of the code depends on typed attributes rather than raw ``os.environ``.
 
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +21,10 @@ class Settings(BaseSettings):
     postgres_db: str = "payback"
     postgres_user: str = "payback"
     postgres_password: str = "payback"
+    # An explicit DSN takes precedence over the POSTGRES_* parts. Cloud SQL connects over a unix
+    # socket (`...@/db?host=/cloudsql/INSTANCE`), a form the host:port builder can't express — so a
+    # managed environment injects the full DSN here and the parts stay the builder for local/AWS.
+    database_url_override: str | None = Field(default=None, alias="DATABASE_URL")
 
     # ── Embeddings ──────────────────────────────────────────────────
     # Which managed provider serves vectors: 'openai' (default) or 'vertex'. Embedding is a
@@ -35,9 +40,13 @@ class Settings(BaseSettings):
     # ── Retrieval strategy selection ────────────────────────────────
     # The vector store, the candidate-filter, and the ranker are each pluggable; these
     # pick the active strategy so they can be swapped / A/B-compared by config alone.
-    retriever_backend: str = "pgvector"
+    retriever_backend: str = "pgvector"  # pgvector (local/AWS) | bigquery (GCP warehouse tier)
     filter_strategy: str = "absolute"  # absolute | autocut | relative | none
     ranking_strategy: str = "constrained"  # constrained | mmr | zscore
+    # BigQuery vector store — read only when retriever_backend=bigquery. The GCP project + location
+    # come from the Vertex settings above (BigQuery and Vertex share the project).
+    bigquery_dataset: str = "payback_vectors"
+    bigquery_table: str = "products"
 
     # ── Retrieval tuning ────────────────────────────────────────────
     # Max cosine distance the 'absolute' filter keeps. Bound to the embedding model's
@@ -70,7 +79,9 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        """Async SQLAlchemy DSN built from the discrete Postgres settings."""
+        """Async SQLAlchemy DSN (asyncpg). The explicit override wins; else built from POSTGRES_*."""
+        if self.database_url_override:
+            return _as_async(self.database_url_override)
         return (
             f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
@@ -78,15 +89,31 @@ class Settings(BaseSettings):
 
     @property
     def checkpoint_db_url(self) -> str:
-        """Plain libpq DSN for the LangGraph Postgres checkpointer.
+        """Plain libpq DSN for the LangGraph Postgres checkpointer (psycopg, not SQLAlchemy).
 
-        LangGraph's checkpointer talks to Postgres through psycopg, not SQLAlchemy, so it needs
-        the standard ``postgresql://`` URL — not the ``+asyncpg`` driver form above.
+        Same source as ``database_url`` but the libpq form (no ``+asyncpg``), so the checkpointer
+        also reaches Cloud SQL over the socket when an override is set.
         """
+        if self.database_url_override:
+            return _as_libpq(self.database_url_override)
         return (
             f"postgresql://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+
+
+# Both DSNs come from one source; these only rewrite the driver scheme and never touch the netloc
+# or query, so a Cloud SQL socket form (`...@/db?host=/cloudsql/INSTANCE`) round-trips intact.
+def _as_async(url: str) -> str:
+    """Ensure the SQLAlchemy ``postgresql+asyncpg://`` scheme."""
+    if url.startswith("postgresql+asyncpg://"):
+        return url
+    return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+
+def _as_libpq(url: str) -> str:
+    """Strip the ``+asyncpg`` driver tag to the plain libpq ``postgresql://`` scheme psycopg wants."""
+    return url.replace("postgresql+asyncpg://", "postgresql://", 1)
 
 
 @lru_cache

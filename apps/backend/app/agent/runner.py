@@ -1,15 +1,11 @@
 """Run the agent graph for one HTTP turn and shape the result.
 
 The endpoints stay thin: they hand a query (or a resume answer) here, and get back the
-discriminated-union response. This module owns the two things that are fiddly about driving a
-LangGraph with human-in-the-loop over HTTP:
-
-1. **Threading the request session in via config** — the graph's search node needs the DB
-   session, which can't live in (serializable) graph state, so it travels in
-   ``config["configurable"]["session"]`` alongside the ``thread_id`` the checkpointer keys on.
-2. **Detecting the interrupt** — when the clarify node calls ``interrupt()``, the graph returns
-   with an ``__interrupt__`` payload instead of finishing. That is the signal to return a
-   clarifying question (and the ``thread_id`` to resume with) rather than products.
+discriminated-union response. The fiddly part of driving a LangGraph with human-in-the-loop over
+HTTP is **detecting the interrupt**: when the clarify node calls ``interrupt()``, the graph returns
+with an ``__interrupt__`` payload instead of finishing — the signal to return a clarifying question
+(and the ``thread_id`` to resume with) rather than products. (The search node owns its own data
+access, so no DB session is threaded through the run config.)
 """
 
 from __future__ import annotations
@@ -18,7 +14,6 @@ import uuid
 
 from langchain_core.callbacks import get_usage_metadata_callback
 from langgraph.types import Command
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.llm.cost import usage_from_callback
 from app.schemas import (
@@ -41,7 +36,7 @@ class UnknownThreadError(Exception):
     """
 
 
-async def start_assist(agent, query: str, session: AsyncSession) -> AssistResponse:
+async def start_assist(agent, query: str) -> AssistResponse:
     """Begin a new conversation: classify the query and act on it.
 
     ``agent`` is the compiled graph (passed in, not a global) so the caller controls its
@@ -53,14 +48,14 @@ async def start_assist(agent, query: str, session: AsyncSession) -> AssistRespon
     with get_usage_metadata_callback() as cb:
         result = await agent.ainvoke(
             {"query": query},
-            config={"configurable": {"thread_id": thread_id, "session": session}},
+            config={"configurable": {"thread_id": thread_id}},
         )
     return _to_response(result, thread_id, usage_from_callback(cb.usage_metadata))
 
 
-async def resume_assist(agent, thread_id: str, answer: str, session: AsyncSession) -> AssistResponse:
+async def resume_assist(agent, thread_id: str, answer: str) -> AssistResponse:
     """Continue a paused conversation with the user's answer to a clarifying question."""
-    config = {"configurable": {"thread_id": thread_id, "session": session}}
+    config = {"configurable": {"thread_id": thread_id}}
 
     # A resumable thread is one paused mid-run (its `next` points at the node to continue). An
     # unknown or already-finished thread has no pending step — reject it cleanly rather than

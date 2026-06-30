@@ -25,14 +25,12 @@ Design choices worth calling out:
 * **The clarify question lives in state.** Whoever decides to clarify (classify when vague,
   search/route when empty) sets ``clarify_question``; the clarify node just asks it. One ask
   step, no duplicated question logic.
-* **Session travels in ``config``, not state.** The checkpointer serializes state to pause a
-  conversation; a live DB session can't be serialized, so it is injected per request via
-  ``config["configurable"]["session"]``.
+* **The search node owns its data access.** The retriever opens its own DB session, so nothing
+  unserializable has to be threaded through the run config — graph state stays pure data.
 """
 
 from typing import Any, Literal
 
-from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
 
@@ -57,7 +55,7 @@ _ROUTE = NextBestAction.ROUTE_TO_PARTNER.value
 
 
 async def classify_node(
-    state: AgentState, config: RunnableConfig
+    state: AgentState,
 ) -> Command[Literal["search", "route_to_partner", "clarify"]]:
     """LLM call → Classification → next action, then route there in one step.
 
@@ -88,11 +86,9 @@ async def classify_node(
     return Command(goto=action.value, update=update)
 
 
-async def search_node(
-    state: AgentState, config: RunnableConfig
-) -> Command[Literal["clarify", "__end__"]]:
+async def search_node(state: AgentState) -> Command[Literal["clarify", "__end__"]]:
     """Run the retriever; on no results, redirect to clarify instead of a dead-end empty list."""
-    return await _search_then_route(state["classification"], config)
+    return await _search_then_route(state["classification"])
 
 
 def route_node(state: AgentState) -> Command[Literal["__end__"]]:
@@ -119,9 +115,9 @@ def clarify_node(state: AgentState) -> Command[Literal["classify"]]:
     return Command(goto="classify", update={"answer": answer})
 
 
-async def _search_then_route(classification: Classification, config: RunnableConfig) -> Command:
+async def _search_then_route(classification: Classification) -> Command:
     """Shared body for search/route: retrieve, then go to END or clarify based on results."""
-    hits = await _run_search(classification, config)
+    hits = await _run_search(classification)
     if hits:
         return Command(goto=END, update={"hits": hits})
     # Nothing matched — ask the user to refine rather than returning an empty product list.
@@ -135,14 +131,12 @@ async def _search_then_route(classification: Classification, config: RunnableCon
     )
 
 
-async def _run_search(classification: Classification, config: RunnableConfig) -> list[Any]:
+async def _run_search(classification: Classification) -> list[Any]:
     """Call the same retriever the /search endpoint uses, with the agent's extracted parameters.
 
-    The request-scoped session comes from config (not state — see module docstring).
+    The retriever owns its own data access, so the node passes only the search parameters.
     """
-    session = config["configurable"]["session"]
     return await get_cached_retriever().search(
-        session,
         classification.search_query,
         partner=classification.partner,
         sort=classification.sort or Sort.RELEVANCE,

@@ -1,10 +1,9 @@
 """The agent graph's state, and the pure intent→action decision.
 
 ``AgentState`` is what flows through the LangGraph nodes and what the checkpointer persists
-between an interrupt and its resume. It must stay **serializable** — plain data only — so the
-DB session is NOT kept here; it is passed per-request through the graph's ``config`` instead
-(``config["configurable"]["session"]``). Keeping live resources out of state is what lets the
-checkpointer save/restore a paused conversation.
+between an interrupt and its resume. It stays **serializable** — plain data only, no live
+resources — which is what lets the checkpointer save/restore a paused conversation. (The search
+node's retriever owns its own data access, so no DB session ever has to ride along.)
 
 ``decide_action`` is deliberately a small pure function, not part of the LLM call: the LLM
 *describes* the query (a ``Classification``); this code *decides what to do about it*. Keeping

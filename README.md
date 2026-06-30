@@ -324,7 +324,7 @@ The embedder, filter, and ranker are interfaces selected by environment variable
 |---|---|---|---|
 | Agent LLM | `LLM_MODEL` | `openai/gpt-4o-mini` | any LiteLLM model id (`vertex_ai/…`, `anthropic/…`, …) |
 | Embedder | `EMBEDDING_PROVIDER` | `openai` | `openai`, `vertex` |
-| Vector backend | `RETRIEVER_BACKEND` | `pgvector` | `pgvector` |
+| Vector index | `RETRIEVER_BACKEND` | `pgvector` | `pgvector` (local/AWS), `bigquery` (GCP) |
 | Candidate filter | `FILTER_STRATEGY` | `absolute` | `absolute`, `autocut`, `relative`, `none` |
 | Ranker | `RANKING_STRATEGY` | `constrained` | `constrained`, `mmr`, `zscore` |
 
@@ -388,7 +388,9 @@ apps/
       db/                ORM models, async session, init.sql (schema + indexes)
       embeddings/        Embedder ABC + OpenAI / Vertex + factory
       retrieval/
-        pgvector.py      hybrid retriever (semantic + keyword + fuse + rank)
+        hybrid.py        HybridRetriever — embed → semantic + keyword → fuse → hydrate → rank
+        vector_index.py  VectorIndex ABC: PgVectorIndex (local/AWS) | BigQueryVectorIndex (GCP)
+        pgvector.py      the Postgres arms (pgvector cosine + German full-text)
         fusion.py        Reciprocal Rank Fusion
         filtering/       CandidateFilter ABC + 4 strategies + factory
         ranking/         Ranker ABC + 3 strategies + factory
@@ -464,9 +466,10 @@ DB as a managed service, and exposes the service URL as an output. See each modu
 
 - **Vertex AI** is a config swap, not an infra change: `LLM_MODEL=vertex_ai/…` /
   `EMBEDDING_PROVIDER=vertex` routes inference there via LiteLLM.
-- **BigQuery** is provisioned on GCP as the documented vector-search **scale** path behind the
-  `Retriever` interface — a warehouse seam, not the real-time serving store
-  ([ADR 0003](docs/decisions/0003-pgvector-with-retriever-interface.md)).
+- **BigQuery** is the GCP vector index (the brief's preferred service). On GCP the semantic arm runs
+  in BigQuery `VECTOR_SEARCH` while the German keyword arm + catalog rows stay in Cloud SQL — so GCP
+  is **still fully hybrid**, same as local/AWS. The swap is one config value (`RETRIEVER_BACKEND`)
+  behind the `VectorIndex` seam ([ADR 0007](docs/decisions/0007-bigquery-retrieval-backend.md)).
 
 ---
 

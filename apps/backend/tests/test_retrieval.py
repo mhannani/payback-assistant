@@ -6,6 +6,8 @@ the catalog is seeded and embedded (`make seed && make embed`).
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 import pytest
 from sqlalchemy import select
 
@@ -112,32 +114,40 @@ async def test_fulltext_misses_cross_lingual(db_session) -> None:
 # ── End-to-end behaviour through the full retriever ─────────────────────────
 
 
+@asynccontextmanager
+async def _provider(session):
+    """A session_provider that hands the retriever the test's rolled-back session (not a new one)."""
+    yield session
+
+
 async def test_search_guenstige_windeln_returns_only_diapers(db_session, embedder) -> None:
     # The regression that drove the candidate filter: with the noise cut, "cheap diapers"
     # must return diapers — not a cheap-but-irrelevant coffee.
-    from app.retrieval.pgvector import PgVectorRetriever
+    from app.retrieval.hybrid import HybridRetriever
+    from app.retrieval.vector_index import PgVectorIndex
 
-    hits = await PgVectorRetriever(embedder).search(
-        db_session, "günstige Windeln", top_k=5, sort=Sort.PRICE_LOW
-    )
+    retriever = HybridRetriever(embedder, PgVectorIndex(), session_provider=lambda: _provider(db_session))
+    hits = await retriever.search("günstige Windeln", top_k=5, sort=Sort.PRICE_LOW)
     assert hits
     assert all("windel" in h.name.lower() for h in hits)
 
 
 async def test_search_pasta_dinner_spans_partners(db_session, embedder) -> None:
     # Cross-lingual + cross-partner: an English query finds German pasta from >1 partner.
-    from app.retrieval.pgvector import PgVectorRetriever
+    from app.retrieval.hybrid import HybridRetriever
+    from app.retrieval.vector_index import PgVectorIndex
 
-    hits = await PgVectorRetriever(embedder).search(db_session, "pasta dinner", top_k=8)
+    retriever = HybridRetriever(embedder, PgVectorIndex(), session_provider=lambda: _provider(db_session))
+    hits = await retriever.search("pasta dinner", top_k=8)
     assert hits
     assert len({h.partner for h in hits}) >= 2
 
 
 async def test_search_partner_filter(db_session, embedder) -> None:
-    from app.retrieval.pgvector import PgVectorRetriever
+    from app.retrieval.hybrid import HybridRetriever
+    from app.retrieval.vector_index import PgVectorIndex
 
-    hits = await PgVectorRetriever(embedder).search(
-        db_session, "shampoo", top_k=5, partner=PartnerSlug.DM
-    )
+    retriever = HybridRetriever(embedder, PgVectorIndex(), session_provider=lambda: _provider(db_session))
+    hits = await retriever.search("shampoo", top_k=5, partner=PartnerSlug.DM)
     assert hits
     assert all(h.partner is PartnerSlug.DM for h in hits)

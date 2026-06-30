@@ -94,7 +94,7 @@ resource "google_sql_user" "app" {
 resource "google_bigquery_dataset" "vectors" {
   dataset_id  = "payback_vectors"
   location    = var.region
-  description = "Vector-search warehouse seam (ADR 0003): BigQuery VECTOR_SEARCH at scale, behind the Retriever interface. Not the real-time serving store."
+  description = "GCP vector store (ADR 0003/0007): holds product embeddings; the BigQueryRetriever runs VECTOR_SEARCH here. Catalog rows + the agent checkpointer stay in Cloud SQL."
 
   depends_on = [google_project_service.enabled]
 }
@@ -176,6 +176,21 @@ resource "google_cloud_run_v2_service" "api" {
         value = var.llm_model
       }
 
+      # GCP serves vector search from BigQuery (the brief's preferred service / warehouse tier);
+      # local + AWS stay on pgvector. Catalog rows + the checkpointer remain in Cloud SQL.
+      env {
+        name  = "RETRIEVER_BACKEND"
+        value = "bigquery"
+      }
+      env {
+        name  = "BIGQUERY_DATASET"
+        value = google_bigquery_dataset.vectors.dataset_id
+      }
+      env {
+        name  = "BIGQUERY_TABLE"
+        value = "products"
+      }
+
       # DB connection over the Cloud SQL unix socket mounted below.
       env {
         name  = "DATABASE_URL"
@@ -214,6 +229,20 @@ resource "google_project_iam_member" "run_vertex_user" {
   member  = "serviceAccount:${google_service_account.run.email}"
 }
 
+# BigQuery is the GCP vector backend: run VECTOR_SEARCH jobs (project-level), and write vectors
+# into the dataset (dataset-scoped editor — least privilege, not project-wide).
+resource "google_project_iam_member" "run_bigquery_user" {
+  project = var.project_id
+  role    = "roles/bigquery.user"
+  member  = "serviceAccount:${google_service_account.run.email}"
+}
+
+resource "google_bigquery_dataset_iam_member" "run_dataset_editor" {
+  dataset_id = google_bigquery_dataset.vectors.dataset_id
+  role       = "roles/bigquery.dataEditor"
+  member     = "serviceAccount:${google_service_account.run.email}"
+}
+
 # One-off seed job: same image + identity as the service, reaching Cloud SQL over the private
 # socket — no public DB exposure. Run it once after apply:
 #   gcloud run jobs execute payback-seed --region <region> --wait
@@ -234,8 +263,10 @@ resource "google_cloud_run_v2_job" "seed" {
       }
 
       containers {
-        image   = var.image
-        command = ["sh", "-c", "python -m data.init_db && python -m data.seed && python -m data.embed"]
+        image = var.image
+        # init_db (Postgres schema/rows) → init_bq (BigQuery vector table + index) → seed (rows into
+        # Postgres) → embed (vectors into BigQuery, routed by RETRIEVER_BACKEND).
+        command = ["sh", "-c", "python -m data.init_db && python -m data.init_bq && python -m data.seed && python -m data.embed"]
 
         env {
           name  = "EMBEDDING_PROVIDER"
@@ -244,6 +275,18 @@ resource "google_cloud_run_v2_job" "seed" {
         env {
           name  = "LLM_MODEL"
           value = var.llm_model
+        }
+        env {
+          name  = "RETRIEVER_BACKEND"
+          value = "bigquery"
+        }
+        env {
+          name  = "BIGQUERY_DATASET"
+          value = google_bigquery_dataset.vectors.dataset_id
+        }
+        env {
+          name  = "BIGQUERY_TABLE"
+          value = "products"
         }
         env {
           name  = "DATABASE_URL"

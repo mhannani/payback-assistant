@@ -11,3 +11,4 @@ its consequences — with references where external sources informed it.
 | [0004](0004-provider-agnostic-embeddings.md) | Provider-agnostic embeddings (managed cloud; OpenAI default, Vertex swappable) | Accepted |
 | [0005](0005-candidate-filtering.md) | Candidate filtering: cut the vector noise tail before fusion (absolute distance ceiling) | Accepted |
 | [0006](0006-intent-agent-langgraph.md) | Intent agent as a LangGraph state machine (LiteLLM gateway, durable Postgres checkpointer) | Accepted |
+| [0007](0007-bigquery-retrieval-backend.md) | BigQuery as a pluggable vector index (GCP stays fully hybrid: BigQuery semantic + Cloud SQL lexical) | Accepted |
