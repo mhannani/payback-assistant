@@ -54,6 +54,19 @@ instances. Its lifecycle is owned by an `async with` context manager held open b
 lifespan; the compiled agent is built once and stored on `app.state`. (`MemorySaver` is fine for
 tests and scripts.)
 
+### Multi-turn refinement: conversation memory + a bounded loop
+
+The brief asks for a one-shot decision (products **or** a clarifying question). We extend it to a
+**bounded multi-turn refinement**: a clarifying answer resumes the graph and re-classifies. The turns
+accumulate in `state["messages"]` via LangGraph's **`add_messages`** reducer — the documented
+short-term-memory primitive — so the classifier always re-reads the full conversation and context
+compounds (an opener "etwas zu essen" + "italienisch" + "Pasta" eventually names a concrete product
+and searches). This deliberately avoids hand-folding the latest answer into a query string, which
+drops earlier turns and never converges. A `clarify_count` cap (`graph.py:_MAX_CLARIFICATIONS`) bounds
+the loop: after N questions the agent forces a search with everything gathered, so it always
+terminates in products/route rather than clarifying forever — LangGraph's recommended shape for a
+re-prompt loop (a bounded counter, not an open `while`).
+
 ## The structured contract
 
 `/assist` (and `/assist/resume`) return a discriminated union on `type`:

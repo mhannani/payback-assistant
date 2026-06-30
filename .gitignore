@@ -34,3 +34,12 @@ crash.log
 *.tfvars
 !*.tfvars.example
 # .terraform.lock.hcl IS committed (pins provider hashes for reproducible plans).
+
+# Frontend (Next.js) build + dependency artifacts. These live under apps/frontend/ (the showcase
+# branch). Ignore them from the repo root so any branch — including main, which has no
+# apps/frontend/.gitignore — never sees thousands of untracked build files.
+apps/frontend/node_modules/
+apps/frontend/.next/
+apps/frontend/out/
+apps/frontend/next-env.d.ts
+apps/frontend/.npmrc

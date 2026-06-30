@@ -54,11 +54,12 @@ class ProductOut(BaseModel):
 
 
 # ── Intent agent response ───────────────────────────────────────────
-# The assistant answers a query with ONE of three shapes — recommended products, a clarifying
-# question, or a hand-off to a partner's own search. Modelling that as a discriminated union (on
-# ``type``) makes the contract explicit: the client switches on ``type`` and the OpenAPI schema
-# documents every branch, instead of one model with most fields null. ``intent``/``action`` are
-# surfaced so a caller (or a reviewer) can see *why* the agent answered the way it did.
+# The assistant answers a query with ONE of four shapes — recommended products, a clarifying
+# question, a hand-off to a partner's own search, or a helpful decline (out of scope: support or
+# off-topic). Modelling that as a discriminated union (on ``type``) makes the contract explicit: the
+# client switches on ``type`` and the OpenAPI schema documents every branch, instead of one model
+# with most fields null. ``intent``/``action`` are surfaced so a caller (or a reviewer) can see *why*
+# the agent answered the way it did.
 
 
 class UsageOut(BaseModel):
@@ -121,7 +122,24 @@ class RouteResponse(_AssistBase):
     message: str
 
 
+class DeclineResponse(_AssistBase):
+    """The query is out of the assistant's scope — it answers with a helpful hand-off, not products.
+
+    Two cases share this shape: a ``customer_support`` query (orders/returns — handed to the named
+    partner's real service desk) and an ``off_topic`` query (not about shopping at all — politely
+    declined). ``message`` is the helpful reply; ``partner`` is set when the hand-off names one so the
+    client can surface that partner's contact. Distinct from ``clarify`` on purpose: there is no
+    follow-up question and no ``thread_id`` — the conversation ends here.
+    """
+
+    type: Literal["decline"] = "decline"
+    message: str
+    partner: PartnerSlug | None = None
+    partner_name: str | None = None
+
+
 # Discriminated union: FastAPI/Pydantic pick the branch by the ``type`` field.
 AssistResponse = Annotated[
-    ProductsResponse | ClarifyResponse | RouteResponse, Field(discriminator="type")
+    ProductsResponse | ClarifyResponse | RouteResponse | DeclineResponse,
+    Field(discriminator="type"),
 ]
