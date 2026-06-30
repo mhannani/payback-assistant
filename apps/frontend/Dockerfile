@@ -4,8 +4,10 @@
 
 FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+# .npmrc carries `legacy-peer-deps=true` (emoji-mart's React peer range predates React 19). Copy it
+# AND pass the flag explicitly, so `npm ci` resolves identically in CI and locally.
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci --legacy-peer-deps
 
 FROM node:22-alpine AS builder
 WORKDIR /app

@@ -14,7 +14,7 @@ DEV := docker compose -f docker-compose.dev.yml
 EXEC_API := docker exec payback_api
 
 .DEFAULT_GOAL := help
-.PHONY: help up down logs fetch init seed embed eval demo perf test lint \
+.PHONY: help up down logs fetch init seed embed eval demo perf test lint build-images \
         check-secrets deploy-aws redeploy-aws seed-aws destroy-aws deploy-gcp seed-gcp destroy-gcp
 
 help: ## Show available targets
@@ -56,6 +56,14 @@ test: ## Run the test suite
 
 lint: ## Lint the codebase
 	$(EXEC_API) ruff check .
+
+# ── Pre-push gate (showcase branch) ─────────────────────────────────
+# Build BOTH production images the way CI does (api + web). The web image's `npm ci` resolution only
+# breaks inside the Docker build (not in a plain `npm run build`), so run this before pushing the
+# showcase branch — it's exactly what .github/workflows/ci.yml checks.
+build-images: ## Build the prod api + web Docker images locally (catch build breaks before pushing)
+	docker build -t payback-api:ci ./apps/backend
+	docker build -t payback-web:ci --build-arg NEXT_PUBLIC_API_BASE=https://api.payback.mhannani.me ./apps/frontend
 
 # ── Cloud deployment ────────────────────────────────────────────────
 # Each cloud is a self-contained Terraform module under infra/<cloud>/. Fill in

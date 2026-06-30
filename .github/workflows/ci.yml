@@ -1,0 +1,49 @@
+name: CI
+
+# Pre-merge gate: build both Docker images (api + web) so a build break is caught HERE, before the
+# deploy workflow ever runs. This is what would have caught the `npm ci` ERESOLVE that only surfaces
+# in the Docker build (not in a plain `npm run build`). Runs on PRs into the showcase branch and on
+# direct pushes to it — fast, no secrets, no registry push (build-only, `push: false`).
+
+on:
+  pull_request:
+    branches: [feat/showcase-widget, main]
+  push:
+    branches: [feat/showcase-widget]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-images:
+    name: Build images (no push)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build the API image — exactly what the deploy/build job does, but without pushing.
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/backend
+          file: ./apps/backend/Dockerfile
+          push: false
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      # Build the web image — catches frontend Dockerfile / npm-install / next-build breaks.
+      - name: Build Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/frontend
+          file: ./apps/frontend/Dockerfile
+          push: false
+          build-args: |
+            NEXT_PUBLIC_API_BASE=https://api.payback.mhannani.me
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
