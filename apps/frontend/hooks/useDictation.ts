@@ -137,7 +137,10 @@ export function useDictation(onTranscript: (text: string) => void, deviceId?: st
     }
     recorderRef.current = recorder;
 
-    const ws = new WebSocket(buildWsUrl("de"));
+    // "multi" → Deepgram nova-3 transcribes German AND English (and code-switching) in one stream.
+    // Deepgram's detect_language is pre-recorded-only; language=multi is the streaming-supported way
+    // to handle a bilingual speaker (see Deepgram "Multilingual Code-Switching").
+    const ws = new WebSocket(buildWsUrl("multi"));
     ws.binaryType = "arraybuffer";
     wsRef.current = ws;
 

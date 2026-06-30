@@ -15,10 +15,13 @@ router = APIRouter(prefix="/voice", tags=["voice"])
 
 
 @router.websocket("/dictate-stream")
-async def dictate_stream(websocket: WebSocket, language: str = Query("en")) -> None:
+async def dictate_stream(websocket: WebSocket, language: str = Query("multi")) -> None:
     """Accept the browser WebSocket and run a Deepgram dictation session.
 
-    ``language`` is a BCP-47 hint (``en`` / ``de``); the dictation pump forwards it to Deepgram.
+    ``language`` is forwarded to Deepgram. Default ``"multi"`` so nova-3 transcribes German AND
+    English (and code-switching) in one stream — the streaming-supported way to handle a bilingual
+    speaker (Deepgram's ``detect_language`` is pre-recorded-only). A specific BCP-47 code (``de`` /
+    ``en``) still works if a caller wants to pin one language.
     """
     await websocket.accept()
     await run_dictation_stream(websocket, language=language)
