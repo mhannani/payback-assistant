@@ -67,13 +67,12 @@ lint: ## Lint the codebase
 TF_AWS := terraform -chdir=infra/aws
 TF_GCP := terraform -chdir=infra/gcp
 
-# Deploy an IMMUTABLE image tag by default: the current commit SHA, which CI publishes alongside
-# :latest. Pinning the SHA makes every deploy traceable to a commit and rollback-able (just deploy
-# a previous SHA), and a new SHA guarantees a new task definition → a guaranteed image roll.
-# Override for the quick path: `make redeploy-aws IMAGE_TAG=latest`.
-# Full SHA to match the tag CI publishes (`${{ github.sha }}` in .github/workflows/build.yml).
+# The image to deploy. Default to ``:latest`` so a fresh clone's ``make deploy-*`` just works — CI
+# republishes ``:latest`` on every successful main build, so it always exists and is the newest code.
+# For a reproducible / rollback-able deploy, pin the immutable commit SHA CI also publishes
+# (`${{ github.sha }}` in .github/workflows/build.yml): `make deploy-aws IMAGE_TAG=<sha>`.
 IMAGE_REPO := ghcr.io/mhannani/payback-assistant
-IMAGE_TAG  ?= $(shell git rev-parse HEAD)
+IMAGE_TAG  ?= latest
 IMAGE      := $(IMAGE_REPO):$(IMAGE_TAG)
 
 # Fail fast with an actionable message if the LLM key isn't exported (a bare terraform run would
@@ -81,12 +80,12 @@ IMAGE      := $(IMAGE_REPO):$(IMAGE_TAG)
 check-secrets:
 	@test -n "$$TF_VAR_llm_api_key" || { echo "✗ TF_VAR_llm_api_key not set. Run: export TF_VAR_llm_api_key=sk-..."; exit 1; }
 
-deploy-aws: check-secrets ## Provision the AWS stack at the current commit's image (override: IMAGE_TAG=latest)
+deploy-aws: check-secrets ## Provision the AWS stack from the latest image (override: IMAGE_TAG=<sha> to pin)
 	$(TF_AWS) init -input=false
 	$(TF_AWS) apply -input=false -auto-approve -var 'image=$(IMAGE)'
 	@echo "Service: $$($(TF_AWS) output -raw service_url)  (image $(IMAGE_TAG))  —  next: make seed-aws"
 
-redeploy-aws: check-secrets ## Roll the live service to IMAGE_TAG (default: current commit SHA) — no data loss
+redeploy-aws: check-secrets ## Roll the live service to IMAGE_TAG (default: latest) — no data loss
 	$(TF_AWS) apply -input=false -auto-approve -var 'image=$(IMAGE)'
 	@echo "Rolled payback-api to image $(IMAGE_TAG)."
 
@@ -104,7 +103,7 @@ seed-aws: ## Run the one-off seed job in-VPC (init_db → seed → embed) agains
 destroy-aws: check-secrets ## Tear down the AWS stack
 	$(TF_AWS) destroy -input=false -auto-approve
 
-deploy-gcp: ## Provision the GCP stack at the current commit's image (override: IMAGE_TAG=latest)
+deploy-gcp: ## Provision the GCP stack from the latest image (override: IMAGE_TAG=<sha> to pin)
 	$(TF_GCP) init -input=false
 	$(TF_GCP) apply -input=false -auto-approve -var 'image=$(IMAGE)'
 	@echo "Service: $$($(TF_GCP) output -raw service_url)  (image $(IMAGE_TAG))  —  next: make seed-gcp"
