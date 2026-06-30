@@ -1,9 +1,12 @@
-"""Run the assistant demo: five queries across languages and intents → JSON.
+"""Run the assistant demo: a query per intent across languages → JSON.
 
 A thin HTTP *client* of the running service — exactly how a real caller (or a reviewer) uses the
 assistant. It loads the queries from ``queries.json``, sends each to ``POST /assist``, and prints
-the structured response. When a query is vague the agent replies with a clarifying question; the
-client then answers it via ``POST /assist/resume`` to show the multi-turn flow end to end.
+the structured response. The set covers every branch of the agent — product search (price intent,
+cross-lingual, dietary filter), a value comparison, a partner route, a vague→clarify→resume turn,
+and an out-of-scope decline (support hand-off + off-topic) — so one run exercises the whole intent
+surface. When a query is vague the agent replies with a clarifying question; the client then answers
+it via ``POST /assist/resume`` to show the multi-turn flow end to end.
 
 ``make demo`` runs it inside the api container against the local service; point ``--base-url`` at
 a deployed URL to demo that instead.

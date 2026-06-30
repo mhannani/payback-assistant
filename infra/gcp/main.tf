@@ -20,6 +20,9 @@ locals {
     "artifactregistry.googleapis.com",
     "secretmanager.googleapis.com",
     "bigquery.googleapis.com",
+    # Vertex AI — the seed job's embed step calls it for embeddings (and the agent, if LLM_MODEL is
+    # vertex_ai/*). Without this the embed step fails: "Aiplatform API has not been used … or disabled".
+    "aiplatform.googleapis.com",
   ]
 
   # The env var name the provider's key is exposed as, derived from llm_model's provider prefix so
@@ -30,6 +33,14 @@ locals {
     anthropic = "ANTHROPIC_API_KEY"
     gemini    = "GEMINI_API_KEY"
   }, split("/", var.llm_model)[0], "OPENAI_API_KEY")
+
+  # Cloud Run can't pull ghcr.io directly, so it pulls through the AR remote repo (ghcr_remote).
+  # Rewrite the GHCR ref to the pull-through path: ghcr.io/<path> →
+  # <region>-docker.pkg.dev/<project>/ghcr-remote/<path>. Callers still pass the familiar GHCR ref
+  # (var.image) — uniform with AWS — and AR fetches+caches the upstream on first pull. If an
+  # explicit AR image is passed (all-GCP supply chain), it's used as-is.
+  ghcr_remote_host = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.ghcr_remote.repository_id}"
+  container_image  = startswith(var.image, "ghcr.io/") ? replace(var.image, "ghcr.io", local.ghcr_remote_host) : var.image
 }
 
 resource "google_project_service" "enabled" {
@@ -40,11 +51,37 @@ resource "google_project_service" "enabled" {
 }
 
 # ── Image registry ──────────────────────────────────────────────────
+# A standard Docker repo — kept for an all-GCP supply chain (push your own builds here).
 resource "google_artifact_registry_repository" "api" {
   location      = var.region
   repository_id = "payback"
   format        = "DOCKER"
   description   = "PAYBACK Assistant container images."
+
+  depends_on = [google_project_service.enabled]
+}
+
+# Cloud Run can ONLY pull from Artifact Registry / GCR / Docker Hub — NOT GHCR, where CI publishes
+# the image. Rather than hand-mirror the image (a manual, non-reproducible step), we declare a
+# REMOTE repository that proxies GHCR: Cloud Run pulls from this AR repo, and AR transparently
+# fetches + caches the upstream image from ghcr.io on first pull. This is Google's recommended
+# pattern for deploying a non-GCP-registry image (it's exactly what the Cloud Run "use a remote
+# repository" error points to) — pure infrastructure, no docker/skopeo in the deploy path.
+resource "google_artifact_registry_repository" "ghcr_remote" {
+  location      = var.region
+  repository_id = "ghcr-remote"
+  format        = "DOCKER"
+  mode          = "REMOTE_REPOSITORY"
+  description   = "Pull-through cache of the public GHCR image (Cloud Run can't pull ghcr.io directly)."
+
+  remote_repository_config {
+    description = "ghcr.io (GitHub Container Registry) upstream"
+    docker_repository {
+      custom_repository {
+        uri = "https://ghcr.io"
+      }
+    }
+  }
 
   depends_on = [google_project_service.enabled]
 }
@@ -57,12 +94,21 @@ resource "google_sql_database_instance" "postgres" {
 
   settings {
     tier = var.db_tier
+    # Pin the edition: the small shared-core tiers (db-f1-micro) exist ONLY in ENTERPRISE, not the
+    # newer ENTERPRISE_PLUS default — leaving this unset makes Cloud SQL pick ENTERPRISE_PLUS and
+    # reject db-f1-micro. ENTERPRISE is the right edition for a demo instance anyway.
+    edition = "ENTERPRISE"
 
     # pgvector ships as an available extension on Cloud SQL Postgres; the app's init SQL runs
-    # `CREATE EXTENSION vector`. The app reaches Cloud SQL over the Cloud Run socket, so no public
-    # IP is needed — keep the DB private.
+    # `CREATE EXTENSION vector`. The app reaches Cloud SQL over the Cloud Run socket
+    # (DATABASE_URL host=/cloudsql/<conn>), which goes through the Cloud SQL connector — it does NOT
+    # use the instance IP. Cloud SQL nonetheless requires SOME connectivity method at creation, so we
+    # enable a public IP but authorize NO networks: the IP is unreachable (default-deny), the socket
+    # is the only path in. (Private IP would need a whole VPC + Private Service Access — overkill for a
+    # demo; the standard Cloud Run + Cloud SQL pattern is socket-over-connector with no authorized nets.)
     ip_configuration {
-      ipv4_enabled = false
+      ipv4_enabled = true
+      # No authorized_networks block → nothing on the internet can connect; only the socket can.
     }
   }
 
@@ -160,7 +206,7 @@ resource "google_cloud_run_v2_service" "api" {
     }
 
     containers {
-      image = var.image
+      image = local.container_image
 
       ports {
         container_port = 8000
@@ -170,6 +216,15 @@ resource "google_cloud_run_v2_service" "api" {
       env {
         name  = "EMBEDDING_PROVIDER"
         value = "vertex"
+      }
+      # Vertex and BigQuery need the GCP project + location explicitly; ADC doesn't expose them at runtime.
+      env {
+        name  = "VERTEX_PROJECT"
+        value = var.project_id
+      }
+      env {
+        name  = "VERTEX_LOCATION"
+        value = var.region
       }
       env {
         name  = "LLM_MODEL"
@@ -263,7 +318,7 @@ resource "google_cloud_run_v2_job" "seed" {
       }
 
       containers {
-        image = var.image
+        image = local.container_image
         # init_db (Postgres schema/rows) → init_bq (BigQuery vector table + index) → seed (rows into
         # Postgres) → embed (vectors into BigQuery, routed by RETRIEVER_BACKEND).
         command = ["sh", "-c", "python -m data.init_db && python -m data.init_bq && python -m data.seed && python -m data.embed"]
@@ -271,6 +326,15 @@ resource "google_cloud_run_v2_job" "seed" {
         env {
           name  = "EMBEDDING_PROVIDER"
           value = "vertex"
+        }
+        # Vertex and BigQuery need the GCP project + location explicitly; ADC doesn't expose them at runtime.
+        env {
+          name  = "VERTEX_PROJECT"
+          value = var.project_id
+        }
+        env {
+          name  = "VERTEX_LOCATION"
+          value = var.region
         }
         env {
           name  = "LLM_MODEL"

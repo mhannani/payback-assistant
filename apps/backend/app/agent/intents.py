@@ -19,12 +19,19 @@ from enum import StrEnum
 
 
 class Intent(StrEnum):
-    """What the user is trying to do — the brief's four intent categories."""
+    """What the user is trying to do — the brief's four intent categories, plus an out-of-scope guard.
+
+    OFF_TOPIC is ours, not the brief's: a shopping assistant must firmly decline requests that aren't
+    about products at all (write code, general chit-chat, "ignore your instructions"), rather than
+    clarifying them (which invites more off-topic) or searching them (which returns noise). Detecting
+    it in the classifier — not via brittle phrase matching — is the structural way to keep scope.
+    """
 
     SEARCH = "search"  # a concrete product need: "günstige Windeln", "Anker headphones"
     DISCOVERY = "discovery"  # vague/browsing: "something for breakfast" — often needs clarifying
     COMPARISON = "comparison"  # weighing options: "compare the cheapest pasta"
-    CUSTOMER_SUPPORT = "customer_support"  # not a product query: returns/help — out of catalog scope
+    CUSTOMER_SUPPORT = "customer_support"  # product-adjacent help: returns, where's-my-order — clarify
+    OFF_TOPIC = "off_topic"  # not about shopping at all: coding, weather, chit-chat — politely decline
 
 
 class Language(StrEnum):
@@ -35,13 +42,18 @@ class Language(StrEnum):
 
 
 class NextBestAction(StrEnum):
-    """What the agent does next — the brief's three agent actions.
+    """What the agent does next — the brief's three agent actions, plus a scope-guard refusal.
 
     SEARCH: the query is specific → run a catalog search and return products.
     CLARIFY: the query is too vague to act on → ask one clarifying question.
     ROUTE_TO_PARTNER: the query is navigational ("show me dm's …") → search scoped to a partner.
+    COMPARE: the query weighs options ("which pasta is cheapest?") → search ordered by value
+        (price-per-unit) and surface a best-value pick, so the shopper can compare like with like.
+    DECLINE: the query is out of scope (OFF_TOPIC / support) → a helpful hand-off; terminal, no search.
     """
 
     SEARCH = "search"
     CLARIFY = "clarify"
     ROUTE_TO_PARTNER = "route_to_partner"
+    COMPARE = "compare"
+    DECLINE = "decline"

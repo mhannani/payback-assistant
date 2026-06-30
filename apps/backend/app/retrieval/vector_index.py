@@ -10,6 +10,7 @@ hybrid orchestration per backend.
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
@@ -134,11 +135,19 @@ class BigQueryVectorIndex(VectorIndex):
         )
         ORDER BY distance
         """
-        job = self._bq_client().query(
-            sql, job_config=bigquery.QueryJobConfig(query_parameters=params)
-        )
-        scored = [
-            ScoredCandidate(product_id=uuid.UUID(str(row["product_id"])), distance=row["distance"])
-            for row in job.result()
-        ]
+        def _run() -> list[ScoredCandidate]:
+            # The BigQuery client is synchronous: both ``query()`` and ``job.result()`` block on
+            # network I/O. Run them in a worker thread so the warehouse round-trip doesn't stall the
+            # event loop.
+            job = self._bq_client().query(
+                sql, job_config=bigquery.QueryJobConfig(query_parameters=params)
+            )
+            return [
+                ScoredCandidate(
+                    product_id=uuid.UUID(str(row["product_id"])), distance=row["distance"]
+                )
+                for row in job.result()
+            ]
+
+        scored = await asyncio.to_thread(_run)
         return [c.product_id for c in candidate_filter.filter(scored)]

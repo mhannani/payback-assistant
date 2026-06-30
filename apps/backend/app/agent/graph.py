@@ -2,35 +2,46 @@
 
 The brief's agent in one diagram::
 
-    START → classify ─┬─ search ─┬─ (hits)  → END
-                      │          └─ (none)  → clarify
-                      ├─ route  ─┬─ (hits)  → END
-                      │          └─ (none)  → clarify
+    START → classify ─┬─ search ─┬─ (hits)        → END
+                      │          └─ (none) ─┬─ budget left → clarify
+                      │                     └─ capped      → END (empty)
+                      ├─ compare (value-ranked)           → END
+                      ├─ route                            → END
+                      ├─ decline                          → END (out of scope)
                       └─ clarify → (interrupt; on resume) → classify
 
-* **classify** — one LLM call (structured output) turns the raw query into a
-  :class:`Classification`; a pure policy (:func:`decide_action`) picks the next action.
-* **search** / **route** — run the existing retriever (route = scoped to a named partner). If
-  nothing matches, they redirect to clarify and ask the user to refine, rather than returning an
-  empty list.
-* **clarify** — ``interrupt()`` pauses to ask one question; the resumed answer re-enters
-  classify (loop via routing, never a ``while`` inside the node — LangGraph's rule).
+* **classify** — one LLM call (structured output) reads the WHOLE conversation (``messages``) and
+  produces a :class:`Classification`; a pure policy (:func:`decide_action`) picks the next action.
+* **search** / **route** — run the existing retriever (route = scoped to a named partner). If a
+  search matches nothing, it redirects to clarify to ask the user to refine — unless the clarify
+  budget is spent, in which case it ends with an empty result set rather than looping.
+* **clarify** — ``interrupt()`` pauses to ask one question; the resumed answer is APPENDED to
+  ``messages`` and re-enters classify (loop via routing, never a ``while`` inside the node —
+  LangGraph's rule). The conversation accumulates, so the next classify sees every prior answer.
+
+The clarify→resume loop is **bounded**. Each clarify increments ``clarify_count``; once it reaches
+``_MAX_CLARIFICATIONS`` the classify node forces a search instead of asking again, so the agent
+always terminates in products (or a route), honoring the brief's "products OR a clarifying question"
+contract instead of clarifying forever. (The hand-rolled "fold the latest answer into a query string"
+predecessor dropped earlier answers and never converged — see ``state.py`` for the memory model.)
 
 Design choices worth calling out:
 
+* **Conversation memory via ``add_messages``.** Turns accumulate in ``messages`` (the documented
+  LangGraph short-term-memory primitive), so the classifier re-reads the full history each turn — no
+  manual string concatenation, no lost context.
 * **Routing with ``Command(goto=…, update=…)``.** Nodes that must *both* update state and choose
-  the next node return a ``Command`` — the native LangGraph way to express "do this, then go
-  there" — instead of a separate edge function re-deriving the decision from state. The node
-  that has the data (e.g. the hit count) owns the routing decision.
-* **The clarify question lives in state.** Whoever decides to clarify (classify when vague,
-  search/route when empty) sets ``clarify_question``; the clarify node just asks it. One ask
-  step, no duplicated question logic.
+  the next node return a ``Command`` — the native LangGraph way to express "do this, then go there".
+  The node that has the data (the hit count, the clarify budget) owns the routing decision.
+* **The clarify question lives in state.** Whoever decides to clarify sets ``clarify_question``; the
+  clarify node just asks it. One ask step, no duplicated question logic.
 * **The search node owns its data access.** The retriever opens its own DB session, so nothing
   unserializable has to be threaded through the run config — graph state stays pure data.
 """
 
 from typing import Any, Literal
 
+from langchain_core.messages import HumanMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
 
@@ -52,43 +63,71 @@ from app.shared.partner import partner_search_url
 _CLARIFY = NextBestAction.CLARIFY.value
 _SEARCH = NextBestAction.SEARCH.value
 _ROUTE = NextBestAction.ROUTE_TO_PARTNER.value
+_COMPARE = NextBestAction.COMPARE.value
+_DECLINE = NextBestAction.DECLINE.value
+
+# Convergence guard: the most clarifying questions one conversation may ask before the agent forces a
+# search with everything it has gathered. The brief wants "products OR a clarifying question" — this
+# bounds the clarify→resume loop so it always reaches a terminal answer (LangGraph's recommended shape
+# for re-prompt loops is a bounded counter, not an open while-loop).
+_MAX_CLARIFICATIONS = 3
 
 
 async def classify_node(
     state: AgentState,
-) -> Command[Literal["search", "route_to_partner", "clarify"]]:
-    """LLM call → Classification → next action, then route there in one step.
+) -> Command[Literal["search", "route_to_partner", "clarify", "decline", "compare"]]:
+    """Classify the WHOLE conversation → next action, then route there in one step.
 
-    The ``Command[Literal[...]]`` return annotation is how LangGraph discovers this node's
-    possible destinations (goto targets are runtime values it can't otherwise infer), so the
-    compiled graph is correctly edged and drawable.
+    The ``Command[Literal[...]]`` return annotation is how LangGraph discovers this node's possible
+    destinations (goto targets are runtime values it can't otherwise infer), so the compiled graph is
+    correctly edged and drawable.
 
-    On a resume after clarification the user's answer is folded into the query so the model
-    re-classifies with the added context (e.g. "etwas zu essen" + answer "Nudeln").
+    The classifier reads ``state["messages"]`` — the opening query plus every clarification answer,
+    accumulated by the ``add_messages`` reducer — so on a resume it re-classifies with the FULL added
+    context (e.g. "etwas zu essen" + "Bio" + "fürs Abendessen"), not just the latest turn.
+
+    Convergence: if the policy says CLARIFY but the conversation has already asked the maximum number
+    of questions, force a search with everything gathered so far instead of asking again — the agent
+    must terminate in products/route, never loop forever.
     """
-    query = state["query"]
-    if state.get("answer"):
-        query = f"{query}. {state['answer']}"
-
-    classification: Classification = await classifier_chain().ainvoke({"query": query})
+    classification: Classification = await classifier_chain().ainvoke(
+        {"messages": state["messages"]}
+    )
     action = decide_action(classification)
+    update: dict[str, Any] = {"classification": classification, "action": action}
 
-    update: dict[str, Any] = {
-        "classification": classification,
-        "action": action,
-        "answer": None,  # consume any resumed answer so a later turn won't reuse it
-    }
     if action is NextBestAction.CLARIFY:
+        if state.get("clarify_count", 0) >= _MAX_CLARIFICATIONS:
+            # Budget spent — stop asking and search with the accumulated conversation.
+            update["action"] = NextBestAction.SEARCH
+            return Command(goto=_SEARCH, update=update)
+        update["clarify_count"] = state.get("clarify_count", 0) + 1
         # The model proposes the question; fall back to a generic one in the user's language.
         update["clarify_question"] = (
             classification.clarification_question or _default_question(classification.language)
         )
+        return Command(goto=_CLARIFY, update=update)
+
     return Command(goto=action.value, update=update)
 
 
 async def search_node(state: AgentState) -> Command[Literal["clarify", "__end__"]]:
     """Run the retriever; on no results, redirect to clarify instead of a dead-end empty list."""
-    return await _search_then_route(state["classification"])
+    return await _search_then_route(state["classification"], state.get("clarify_count", 0))
+
+
+async def compare_node(state: AgentState) -> Command[Literal["__end__"]]:
+    """Weigh options: search ranked by VALUE (price-per-unit) and end with the results to compare.
+
+    A comparison query ("welche Nudeln sind am günstigsten?") forces ``Sort.PRICE_LOW`` so the
+    retriever orders by price-per-unit — the cheapest *value* first, not the cheapest sticker — even if
+    the query had no explicit price word. ``classification.partner`` still scopes the search, so
+    "… bei dm" compares within dm (decide_action routes comparison here before route for exactly that).
+    Unlike search, an empty result ENDS cleanly (no clarify redirect): a comparison is explicit, so
+    "nothing to compare" is the honest terminal answer, surfaced as an empty compare response.
+    """
+    hits = await _run_search(state["classification"], sort_override=Sort.PRICE_LOW)
+    return Command(goto=END, update={"hits": hits})
 
 
 def route_node(state: AgentState) -> Command[Literal["__end__"]]:
@@ -104,57 +143,87 @@ def route_node(state: AgentState) -> Command[Literal["__end__"]]:
     return Command(goto=END, update={"deeplink": deeplink})
 
 
+def decline_node(state: AgentState) -> Command[Literal["__end__"]]:
+    """Out-of-scope guard: answer with a helpful hand-off, not products, and end.
+
+    Two cases land here (see ``decide_action``): a ``customer_support`` query — orders/returns, which
+    the assistant has no data for, so it hands the shopper to the partner's real service desk — and an
+    ``off_topic`` query (not shopping at all), politely declined. A terminal step with NO retrieval and
+    NO clarify (clarifying these just invites more of the same). Like the route node, this just ends;
+    the helpful text is composed in the runner (``_decline_message``) next to the other per-language
+    copy, and the response layer surfaces it as a first-class ``decline``. Scope stays structural —
+    driven by the classifier's intent, not by phrase matching on the query.
+    """
+    return Command(goto=END)
+
+
 def clarify_node(state: AgentState) -> Command[Literal["classify"]]:
     """Ask the pending question, pause, then resume into classify with the user's answer.
 
-    Pure "ask" step: the question was decided upstream and put in ``clarify_question``.
-    ``interrupt`` suspends the run (state persisted under the thread_id) and returns the human's
-    reply on resume — called exactly once per invocation, per LangGraph's interrupt rules.
+    Pure "ask" step: the question was decided upstream and put in ``clarify_question``. ``interrupt``
+    suspends the run (state persisted under the thread_id) and returns the human's reply on resume —
+    called exactly once per invocation, per LangGraph's interrupt rules. The reply is APPENDED to
+    ``messages`` (via the ``add_messages`` reducer), so the next classify sees it alongside every
+    earlier turn — the conversation accumulates rather than overwriting.
     """
     answer = interrupt(state["clarify_question"])
-    return Command(goto="classify", update={"answer": answer})
+    return Command(goto="classify", update={"messages": [HumanMessage(content=answer)]})
 
 
-async def _search_then_route(classification: Classification) -> Command:
-    """Shared body for search/route: retrieve, then go to END or clarify based on results."""
+async def _search_then_route(classification: Classification, clarify_count: int) -> Command:
+    """Shared body for search/route: retrieve, then go to END or clarify based on results.
+
+    When a search finds nothing, ask the user to refine — UNLESS the clarify budget is already spent,
+    in which case end with an empty result set. That ends the conversation cleanly ("nothing found")
+    instead of bouncing forced-search ↔ clarify forever once the cap is reached.
+    """
     hits = await _run_search(classification)
     if hits:
         return Command(goto=END, update={"hits": hits})
-    # Nothing matched — ask the user to refine rather than returning an empty product list.
+    if clarify_count >= _MAX_CLARIFICATIONS:
+        return Command(goto=END, update={"hits": []})
+    # Nothing matched and we still have budget — ask the user to refine. This clarify counts toward
+    # the cap, so the no-results path can't loop indefinitely either.
     return Command(
         goto=_CLARIFY,
         update={
             "hits": [],
             "action": NextBestAction.CLARIFY,
+            "clarify_count": clarify_count + 1,
             "clarify_question": _no_results_question(classification.language),
         },
     )
 
 
-async def _run_search(classification: Classification) -> list[Any]:
+async def _run_search(
+    classification: Classification, *, sort_override: Sort | None = None
+) -> list[Any]:
     """Call the same retriever the /search endpoint uses, with the agent's extracted parameters.
 
     The retriever owns its own data access, so the node passes only the search parameters.
+    ``sort_override`` forces an ordering regardless of what the model extracted — the compare node
+    uses it to always rank by value (PRICE_LOW), even when the query had no explicit price word.
     """
     return await get_cached_retriever().search(
         classification.search_query,
         partner=classification.partner,
-        sort=classification.sort or Sort.RELEVANCE,
+        sort=sort_override or classification.sort or Sort.RELEVANCE,
         require_tags=classification.require_tags or None,
     )
 
 
+# German copy uses the formal "Sie" throughout — a retail brand addresses customers formally.
 def _default_question(language: Language) -> str:
     """Generic clarifying question if the model didn't supply one."""
     if language is Language.DE:
-        return "Kannst du genauer sagen, wonach du suchst?"
+        return "Können Sie genauer sagen, wonach Sie suchen?"
     return "Could you tell me a bit more about what you're looking for?"
 
 
 def _no_results_question(language: Language) -> str:
     """Asked when a search returns nothing — invite the user to refine rather than dead-end."""
     if language is Language.DE:
-        return "Dazu habe ich nichts gefunden. Kannst du es anders beschreiben?"
+        return "Dazu habe ich nichts gefunden. Können Sie es anders beschreiben?"
     return "I couldn't find anything for that. Could you describe it differently?"
 
 
@@ -170,7 +239,9 @@ def build_graph() -> StateGraph:
     builder.add_node("classify", classify_node)
     builder.add_node(_SEARCH, search_node)
     builder.add_node(_ROUTE, route_node)
+    builder.add_node(_COMPARE, compare_node)
     builder.add_node(_CLARIFY, clarify_node)
+    builder.add_node(_DECLINE, decline_node)
     builder.add_edge(START, "classify")
     return builder
 

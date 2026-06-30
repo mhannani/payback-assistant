@@ -13,18 +13,22 @@ from __future__ import annotations
 import uuid
 
 from langchain_core.callbacks import get_usage_metadata_callback
+from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 
+from app.agent.intents import Intent, Language, NextBestAction
 from app.llm.cost import usage_from_callback
 from app.schemas import (
     AssistResponse,
     ClarifyResponse,
+    CompareResponse,
+    DeclineResponse,
     ProductOut,
     ProductsResponse,
     RouteResponse,
     UsageOut,
 )
-from app.shared.partner import PARTNER_DISPLAY_NAMES
+from app.shared.partner import PARTNER_DISPLAY_NAMES, partner_contact
 
 
 class UnknownThreadError(Exception):
@@ -47,7 +51,9 @@ async def start_assist(agent, query: str) -> AssistResponse:
     # native aggregator) — so we never thread tokens through graph state. We price it after.
     with get_usage_metadata_callback() as cb:
         result = await agent.ainvoke(
-            {"query": query},
+            # Seed the conversation's first turn. The graph accumulates later answers into this list
+            # (add_messages reducer), so the classifier always re-reads the full history.
+            {"messages": [HumanMessage(content=query)]},
             config={"configurable": {"thread_id": thread_id}},
         )
     return _to_response(result, thread_id, usage_from_callback(cb.usage_metadata))
@@ -70,7 +76,7 @@ async def resume_assist(agent, thread_id: str, answer: str) -> AssistResponse:
 
 
 def _to_response(result: dict, thread_id: str, usage: UsageOut | None) -> AssistResponse:
-    """Map the graph's end state to a products or clarify response.
+    """Map the graph's end state to one of the four assist responses.
 
     ``result["__interrupt__"]`` is present iff the run paused at the clarify node; its payload is
     the question we surfaced via ``interrupt(question)``. ``usage`` is this turn's LLM token/cost
@@ -78,9 +84,10 @@ def _to_response(result: dict, thread_id: str, usage: UsageOut | None) -> Assist
     """
     interrupts = result.get("__interrupt__")
     classification = result["classification"]
+    action = result["action"]
     common = {
         "intent": classification.intent,
-        "action": result["action"],
+        "action": action,
         "language": classification.language,
         "usage": usage,
     }
@@ -88,6 +95,17 @@ def _to_response(result: dict, thread_id: str, usage: UsageOut | None) -> Assist
     if interrupts:
         return ClarifyResponse(
             **common, question=interrupts[0].value, thread_id=thread_id
+        )
+
+    if action is NextBestAction.DECLINE:
+        # Out of scope (support / off-topic): a helpful hand-off, not products. The message names the
+        # partner's real service desk when the support query named one.
+        partner = classification.partner
+        return DeclineResponse(
+            **common,
+            message=_decline_message(classification),
+            partner=partner,
+            partner_name=PARTNER_DISPLAY_NAMES[partner] if partner else None,
         )
 
     if result.get("deeplink"):
@@ -100,16 +118,64 @@ def _to_response(result: dict, thread_id: str, usage: UsageOut | None) -> Assist
             message=_route_message(classification),
         )
 
-    return ProductsResponse(
-        **common, items=[ProductOut.from_hit(h) for h in result.get("hits", [])]
-    )
+    items = [ProductOut.from_hit(h) for h in result.get("hits", [])]
+
+    if action is NextBestAction.COMPARE:
+        # Value comparison: items come back price-per-unit sorted, so the first is the best pick.
+        return CompareResponse(
+            **common,
+            items=items,
+            cheapest_pick=items[0] if items else None,
+            message=classification.message,
+        )
+
+    return ProductsResponse(**common, items=items, message=classification.message)
 
 
 def _route_message(classification) -> str:
     """A short hand-off line in the user's language for a navigational query."""
-    from app.agent.intents import Language
-
     name = PARTNER_DISPLAY_NAMES[classification.partner]
     if classification.language is Language.DE:
-        return f"Ich leite dich zur Suche bei {name} weiter."
+        return f"Ich leite Sie zur Suche bei {name} weiter."
     return f"I'll take you to {name}'s search."
+
+
+def _decline_message(classification) -> str:
+    """The helpful reply for an out-of-scope query, in the user's language (formal Sie).
+
+    For ``customer_support`` we hand the shopper to the *partner's* real service desk (the assistant
+    has no order/returns data of its own); when the query named a partner we quote that partner's
+    actual contact. For ``off_topic`` — and a support query that named no partner — a short, honest
+    "this is a product-search assistant" line.
+    """
+    de = classification.language is Language.DE
+    if classification.intent is Intent.CUSTOMER_SUPPORT and classification.partner is not None:
+        name = PARTNER_DISPLAY_NAMES[classification.partner]
+        c = partner_contact(classification.partner)
+        hours = f" ({c.hours})" if c.hours else ""
+        channels = ", ".join(filter(None, [c.email, c.extra]))
+        if de:
+            tail = f" Weitere Wege: {channels}." if channels else ""
+            return (
+                f"Bei Fragen zu Bestellungen oder Retouren hilft Ihnen der {name}-Kundenservice "
+                f"unter {c.phone}{hours} weiter.{tail}"
+            )
+        tail = f" Other ways: {channels}." if channels else ""
+        return (
+            f"For orders or returns, {name}'s customer service can help you at "
+            f"{c.phone}{hours}.{tail}"
+        )
+    if classification.intent is Intent.CUSTOMER_SUPPORT:
+        if de:
+            return (
+                "Bei Fragen zu Bestellungen oder Retouren wenden Sie sich bitte an den "
+                "Kundenservice des jeweiligen Händlers. Bei der Produktsuche helfe ich gern."
+            )
+        return (
+            "For orders or returns, please contact the retailer's customer service. "
+            "I'm happy to help with product searches."
+        )
+    # off_topic
+    if de:
+        return "Ich kann Ihnen nur bei der Produktsuche helfen."
+    return "I can only help you with product searches."

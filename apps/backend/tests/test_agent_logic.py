@@ -26,6 +26,7 @@ def _classification(**overrides) -> Classification:
         sort=Sort.RELEVANCE,
         require_tags=[],
         search_query="Windeln",
+        message=None,
     )
     base.update(overrides)
     return Classification(**base)
@@ -48,8 +49,34 @@ def test_vague_query_clarifies() -> None:
     assert decide_action(c) is NextBestAction.CLARIFY
 
 
-def test_customer_support_clarifies() -> None:
-    assert decide_action(_classification(intent=Intent.CUSTOMER_SUPPORT)) is NextBestAction.CLARIFY
+def test_customer_support_declines() -> None:
+    # Orders/returns aren't catalog searches and we have no order data — hand off, don't clarify.
+    assert decide_action(_classification(intent=Intent.CUSTOMER_SUPPORT)) is NextBestAction.DECLINE
+
+
+def test_off_topic_declines() -> None:
+    # Not about shopping at all (code, weather, chit-chat) → a polite refusal, never a search/clarify.
+    assert decide_action(_classification(intent=Intent.OFF_TOPIC)) is NextBestAction.DECLINE
+
+
+def test_decline_wins_over_partner_and_clarify() -> None:
+    # Even if the model also guessed a partner or set needs_clarification, an out-of-scope intent
+    # declines first — we never route or clarify an off-topic / support query.
+    c = _classification(
+        intent=Intent.OFF_TOPIC, needs_clarification=True, partner=PartnerSlug.DM
+    )
+    assert decide_action(c) is NextBestAction.DECLINE
+
+
+def test_comparison_query_compares() -> None:
+    assert decide_action(_classification(intent=Intent.COMPARISON)) is NextBestAction.COMPARE
+
+
+def test_comparison_wins_over_named_partner() -> None:
+    # "vergleiche die günstigsten Nudeln bei dm" compares WITHIN dm — comparison beats routing, so a
+    # named partner scopes the comparison rather than handing off to dm's own search.
+    c = _classification(intent=Intent.COMPARISON, partner=PartnerSlug.DM)
+    assert decide_action(c) is NextBestAction.COMPARE
 
 
 def test_clarify_wins_over_route_when_vague() -> None:

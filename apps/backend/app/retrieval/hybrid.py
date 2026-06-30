@@ -10,6 +10,7 @@ so it lives here once rather than being duplicated per backend.
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Sequence
 
 from app.config import get_settings
@@ -65,7 +66,9 @@ class HybridRetriever(Retriever):
         require_tags: Sequence[str] | None = None,
         candidate_k: int = 50,
     ) -> list[SearchHit]:
-        query_vector = self._embedder.embed_query(query)
+        # ``embed_query`` is a blocking network call into the embeddings SDK; offload it to a thread
+        # so the embedding round-trip doesn't stall the event loop for every other request.
+        query_vector = await asyncio.to_thread(self._embedder.embed_query, query)
         filters = {"partner": partner, "require_tags": require_tags, "candidate_k": candidate_k}
 
         async with self._session_provider() as session:

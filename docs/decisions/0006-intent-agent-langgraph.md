@@ -54,11 +54,47 @@ instances. Its lifecycle is owned by an `async with` context manager held open b
 lifespan; the compiled agent is built once and stored on `app.state`. (`MemorySaver` is fine for
 tests and scripts.)
 
+### Multi-turn refinement: conversation memory + a bounded loop
+
+The brief asks for a one-shot decision (products **or** a clarifying question). We extend it to a
+**bounded multi-turn refinement**: a clarifying answer resumes the graph and re-classifies. The turns
+accumulate in `state["messages"]` via LangGraph's **`add_messages`** reducer — the documented
+short-term-memory primitive — so the classifier always re-reads the full conversation and context
+compounds (an opener "etwas zu essen" + "italienisch" + "Pasta" eventually names a concrete product
+and searches). This deliberately avoids hand-folding the latest answer into a query string, which
+drops earlier turns and never converges. A `clarify_count` cap (`graph.py:_MAX_CLARIFICATIONS`) bounds
+the loop: after N questions the agent forces a search with everything gathered, so it always
+terminates in products/route rather than clarifying forever — LangGraph's recommended shape for a
+re-prompt loop (a bounded counter, not an open `while`).
+
+### Value comparison + scope guardrails (beyond the brief)
+
+The brief asks the agent to *detect* four intents; we make two of them *do* something distinct rather
+than fall through to a plain search:
+
+- **`comparison` → a value comparison.** The compare node forces `Sort.PRICE_LOW`, so results are
+  ranked by **price-per-unit** (cheapest *value* first, not cheapest sticker — a 1 L bottle can beat a
+  200 ml one at a higher shelf price). Each product carries a normalized `unit_price_cents` + a
+  `unit_basis` (`per_100g` / `per_100ml`), and `cheapest_pick` highlights the best value. This reuses
+  the ranker's existing `price_per_unit` formula (`retrieval/ranking/_common.py`) — the comparison the
+  API shows and the order the ranker produces agree on "value", one source of truth. A comparison that
+  names a shop compares *within* it (`decide_action` checks comparison before route).
+- **`off_topic` / `customer_support` → a helpful decline.** Out-of-scope requests (write code, weather)
+  and orders/returns are refused rather than searched/clarified. Support hands off to the partner's
+  **real service desk** (`shared/partner.py:PARTNER_CONTACTS`). Scope is enforced *structurally* — by
+  the classifier's intent, not brittle phrase matching (the documented anti-jailbreak stance).
+
+Two cheap, brief-neutral guards round it out: German copy uses the formal **Sie** throughout, and an
+input-length cap rejects oversized `/assist`/`/resume` bodies (`422`) before any model call.
+
 ## The structured contract
 
 `/assist` (and `/assist/resume`) return a discriminated union on `type`:
-`products` | `clarify` | `route`. The client switches on `type`; the OpenAPI schema documents
-every branch. Resuming an unknown/finished thread returns a clean `404`, not a crash.
+`products` | `compare` | `clarify` | `route` | `decline`. The client switches on `type`; the OpenAPI
+schema documents every branch. Resuming an unknown/finished thread returns a clean `404`, not a crash.
+The compiled state machine (rendered in [`../images/agent_graph.png`](../images/agent_graph.png)):
+`classify` fans out to `search`/`compare`/`route`/`decline`/`clarify`; `search` ends with products or
+redirects to `clarify` on no results; `clarify` interrupts and resumes back into `classify`.
 
 ## Consequences
 

@@ -12,6 +12,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field
 
 from app.agent.intents import Intent, Language, NextBestAction
+from app.retrieval.ranking._common import unit_price_from_hit
 from app.retrieval.types import SearchHit
 from app.shared.partner import PARTNER_DISPLAY_NAMES, PartnerSlug
 
@@ -36,9 +37,17 @@ class ProductOut(BaseModel):
     currency: str
     image_url: str | None
     tags: list[str]
+    # Comparative price normalized to a 100-unit base — the metric "cheapest" really means (a 1 L
+    # bottle can beat a 200 ml one even at a higher shelf price). null when the product has no
+    # parseable size. ``unit_basis`` names the base ("per_100g" / "per_100ml") so the figure is
+    # never read as a shelf price. Surfaced on every product so a comparison view can show value,
+    # not just the sticker number.
+    unit_price_cents: int | None
+    unit_basis: str | None
 
     @classmethod
     def from_hit(cls, hit: SearchHit) -> ProductOut:
+        unit = unit_price_from_hit(hit)
         return cls(
             id=hit.product_id,
             partner=hit.partner,
@@ -50,15 +59,18 @@ class ProductOut(BaseModel):
             currency=hit.currency,
             image_url=hit.image_url,
             tags=hit.tags,
+            unit_basis=unit[0] if unit else None,
+            unit_price_cents=unit[1] if unit else None,
         )
 
 
 # ── Intent agent response ───────────────────────────────────────────
-# The assistant answers a query with ONE of three shapes — recommended products, a clarifying
-# question, or a hand-off to a partner's own search. Modelling that as a discriminated union (on
-# ``type``) makes the contract explicit: the client switches on ``type`` and the OpenAPI schema
-# documents every branch, instead of one model with most fields null. ``intent``/``action`` are
-# surfaced so a caller (or a reviewer) can see *why* the agent answered the way it did.
+# The assistant answers a query with ONE of five shapes — recommended products, a value comparison, a
+# clarifying question, a hand-off to a partner's own search, or a helpful decline (out of scope:
+# support or off-topic). Modelling that as a discriminated union (on ``type``) makes the contract
+# explicit: the client switches on ``type`` and the OpenAPI schema documents every branch, instead of
+# one model with most fields null. ``intent``/``action`` are surfaced so a caller (or a reviewer) can
+# see *why* the agent answered the way it did.
 
 
 class UsageOut(BaseModel):
@@ -91,6 +103,9 @@ class ProductsResponse(_AssistBase):
 
     type: Literal["products"] = "products"
     items: list[ProductOut]
+    # An optional helpful one-liner the model wrote alongside the classification (e.g. a short framing
+    # of the results). null for a plain search; the products themselves are the answer.
+    message: str | None = None
 
 
 class ClarifyResponse(_AssistBase):
@@ -121,7 +136,40 @@ class RouteResponse(_AssistBase):
     message: str
 
 
+class DeclineResponse(_AssistBase):
+    """The query is out of the assistant's scope — it answers with a helpful hand-off, not products.
+
+    Two cases share this shape: a ``customer_support`` query (orders/returns — handed to the named
+    partner's real service desk) and an ``off_topic`` query (not about shopping at all — politely
+    declined). ``message`` is the helpful reply; ``partner`` is set when the hand-off names one so the
+    client can surface that partner's contact. Distinct from ``clarify`` on purpose: there is no
+    follow-up question and no ``thread_id`` — the conversation ends here.
+    """
+
+    type: Literal["decline"] = "decline"
+    message: str
+    partner: PartnerSlug | None = None
+    partner_name: str | None = None
+
+
+class CompareResponse(_AssistBase):
+    """The shopper wanted to weigh options — the agent answers with a value comparison.
+
+    Distinct from ``products`` on purpose: it adds comparison *meaning* the plain list doesn't. The
+    ``items`` are ordered by price-per-unit (cheapest value first, not cheapest sticker), each carrying
+    its ``unit_price_cents``; ``cheapest_pick`` highlights the best-value item (``items[0]``, or null
+    when nothing matched). ``message`` is the model's short framing line. The wire stays presentation-
+    neutral — a client may render the items as a table, but the contract is the data, not the layout.
+    """
+
+    type: Literal["compare"] = "compare"
+    items: list[ProductOut]
+    cheapest_pick: ProductOut | None
+    message: str | None = None
+
+
 # Discriminated union: FastAPI/Pydantic pick the branch by the ``type`` field.
 AssistResponse = Annotated[
-    ProductsResponse | ClarifyResponse | RouteResponse, Field(discriminator="type")
+    ProductsResponse | ClarifyResponse | RouteResponse | DeclineResponse | CompareResponse,
+    Field(discriminator="type"),
 ]

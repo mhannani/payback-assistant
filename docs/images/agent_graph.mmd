@@ -1,0 +1,29 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	classify(classify)
+	search(search)
+	route_to_partner(route_to_partner)
+	compare(compare)
+	clarify(clarify)
+	decline(decline)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> classify;
+	clarify -.-> classify;
+	classify -.-> clarify;
+	classify -.-> compare;
+	classify -.-> decline;
+	classify -.-> route_to_partner;
+	classify -.-> search;
+	compare -.-> __end__;
+	decline -.-> __end__;
+	route_to_partner -.-> __end__;
+	search -.-> __end__;
+	search -.-> clarify;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

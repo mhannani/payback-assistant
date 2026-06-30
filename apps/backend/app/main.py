@@ -158,17 +158,32 @@ async def search(
     return [ProductOut.from_hit(h) for h in hits]
 
 
+# A real shopper turn is short; an oversized body is noise or an injection/DoS probe. Capping length
+# at the schema rejects it with a 422 BEFORE any model call is spent (cheap input guardrail).
+_MAX_TURN_CHARS = 2000
+
+
 class AssistRequest(BaseModel):
     """A natural-language turn for the intent agent."""
 
-    query: str = Field(..., min_length=1, description="The shopper's message (German or English).")
+    query: str = Field(
+        ...,
+        min_length=1,
+        max_length=_MAX_TURN_CHARS,
+        description="The shopper's message (German or English).",
+    )
 
 
 class ResumeRequest(BaseModel):
     """An answer to a clarifying question, tied to its paused conversation."""
 
     thread_id: str = Field(..., description="The thread_id returned by the clarify response.")
-    answer: str = Field(..., min_length=1, description="The user's reply to the clarifying question.")
+    answer: str = Field(
+        ...,
+        min_length=1,
+        max_length=_MAX_TURN_CHARS,
+        description="The user's reply to the clarifying question.",
+    )
 
 
 @app.post("/assist", tags=["assist"])
