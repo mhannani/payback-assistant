@@ -1,0 +1,116 @@
+# Production stack for the EC2 host that ALREADY runs a shared Traefik (at /opt/traefik, owning
+# :80/:443 + Let's Encrypt). This compose does NOT run its own Traefik — it joins Traefik's external
+# `traefik` network and exposes each service via Traefik labels (the same pattern Empfio uses on the
+# same host). Two public hostnames, collision-free with Empfio's *.empfio.de:
+#   payback.mhannani.me      → web  (Next.js widget app + landing + /widget.js)
+#   api.payback.mhannani.me  → api  (FastAPI /assist + the /voice/* dictation WebSocket)
+#
+# CI/CD (.github/workflows/deploy.yml) builds the images and pushes them to ECR; the deploy job SSHes
+# to the box and runs `compose pull && up -d`. So images are referenced by `${ECR_REGISTRY}/…:${IMAGE_TAG}`
+# (pulled, not built on the server). `build:` stays for local `docker compose -f … build`.
+#
+# Deploy:  docker compose --env-file .env.prod -f docker-compose.prod.yml pull && … up -d
+# Prereq:  DNS A records for both hosts → the EC2 IP (Let's Encrypt), and `docker network create
+#          traefik` (already created for Empfio on the shared box).
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: payback_db_prod
+    env_file: .env.prod
+    volumes:
+      - payback_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payback -d payback"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - payback_internal
+    restart: unless-stopped
+
+  # One-shot catalog setup — the PAYBACK analogue of Empfio's `migrate` container. Creates the schema,
+  # seeds the catalog, and computes embeddings, then exits; the api waits for it to finish cleanly.
+  # Idempotent on re-deploy: init_db is safe to re-run and `embed` only (re-)embeds outdated rows, so
+  # a normal redeploy re-runs it cheaply (no new OpenAI cost unless the catalog/model changed).
+  seed:
+    image: ${ECR_REGISTRY:-payback-api}/api:${IMAGE_TAG:-prod}
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: payback_seed_prod
+    command: ["sh", "-c", "python -m data.init_db && python -m data.seed && python -m data.embed"]
+    env_file: .env.prod
+    environment:
+      POSTGRES_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - payback_internal
+    restart: "no" # never auto-restart — fail loudly on a setup error
+
+  api:
+    image: ${ECR_REGISTRY:-payback-api}/api:${IMAGE_TAG:-prod}
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: payback_api_prod
+    env_file: .env.prod
+    environment:
+      POSTGRES_HOST: db # in-network DB host
+    depends_on:
+      db:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully # catalog is ready before serving
+    networks:
+      - payback_internal
+      - traefik
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.payback-api.rule=Host(`api.payback.mhannani.me`)"
+      - "traefik.http.routers.payback-api.entrypoints=websecure"
+      - "traefik.http.routers.payback-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.payback-api.loadbalancer.server.port=8000"
+      # Traefik v3 forwards the WebSocket Upgrade transparently — the /voice dictation socket needs
+      # no special label, just this same router.
+
+  web:
+    image: ${ECR_REGISTRY:-payback-web}/web:${IMAGE_TAG:-prod}
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+      args:
+        # Baked into the client bundle at build time (NEXT_PUBLIC_* is compile-time).
+        NEXT_PUBLIC_API_BASE: https://api.payback.mhannani.me
+    container_name: payback_web_prod
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - traefik
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.payback-web.rule=Host(`payback.mhannani.me`)"
+      - "traefik.http.routers.payback-web.entrypoints=websecure"
+      - "traefik.http.routers.payback-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.payback-web.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.payback-web-compress.compress=true"
+      - "traefik.http.routers.payback-web.middlewares=payback-web-compress"
+
+networks:
+  payback_internal:
+    driver: bridge
+  traefik:
+    external: true
+
+volumes:
+  payback_pgdata:

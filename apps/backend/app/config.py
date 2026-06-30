@@ -5,9 +5,10 @@ rest of the code depends on typed attributes rather than raw ``os.environ``.
 """
 
 from functools import lru_cache
+from typing import Annotated
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -65,6 +66,29 @@ class Settings(BaseSettings):
     # 'vertex_ai/gemini-2.0-flash', 'anthropic/claude-...', etc. is a one-line change.
     llm_model: str = "openai/gpt-4o-mini"
     llm_temperature: float = 0.0  # classification is deterministic, not creative
+
+    # ── Web widget (showcase) ───────────────────────────────────────
+    # Browser origins allowed to call the API. The embeddable widget is served from a different
+    # origin than the API (payback.mhannani.me → api.payback.mhannani.me in prod; :3000 → :8000 in
+    # dev), so cross-origin requests are real and CORS must permit them.
+    # NoDecode disables pydantic-settings' default JSON parsing of a list-typed env var, so the
+    # validator below receives the raw string and accepts the friendly comma-separated form
+    # (CORS_ORIGINS=https://a,https://b) instead of requiring a JSON array.
+    cors_origins: Annotated[list[str], NoDecode] = ["https://payback.mhannani.me", "http://localhost:3000"]
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def _split_cors_origins(cls, v: object) -> object:
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
+
+    # ── Voice dictation (Deepgram streaming STT) ────────────────────
+    # The /voice/dictate-stream WebSocket proxies browser audio to Deepgram and streams transcripts
+    # back. The key stays server-side (never exposed to the browser). Absent key → the socket closes
+    # with a clear "not configured" frame, so the rest of the app runs without it.
+    deepgram_api_key: str | None = None
+    deepgram_model: str = "nova-3"
 
     @property
     def embedding_dim(self) -> int:

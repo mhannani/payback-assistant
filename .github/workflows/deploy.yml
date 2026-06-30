@@ -1,0 +1,189 @@
+name: Deploy to production
+
+# The SHOWCASE live deploy (the embeddable widget + products page on the EC2).
+#
+# It runs on the `feat/showcase-widget` branch — NOT main. `main` is the brief's backend-only
+# deliverable (its own `build.yml` publishes the API image to GHCR for the Terraform infra); we do
+# not deploy main to the personal EC2. This branch carries the frontend, so THIS is what the EC2 runs.
+# Separate registry (ECR), separate target (the shared EC2) — no overlap with the brief's GHCR image.
+#
+# Build the changed images, push them to ECR, then SSH to the EC2 box and `compose pull && up -d`.
+# Push-based (the server pulls images, builds nothing). Mirrors Empfio/Helfio's deploy on the same host.
+on:
+  push:
+    branches: [feat/showcase-widget]
+  workflow_dispatch: # manual run — rebuilds everything
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: eu-north-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-north-1.amazonaws.com/payback
+  # The shared EC2 (same box as Empfio). Hardcoded like Empfio's workflow, so PAYBACK needs only the
+  # 4 secrets Empfio already has (AWS_* + EC2_SSH_KEY) — no EC2_HOST/EC2_USER to add.
+  EC2_HOST: 13.63.201.128
+  EC2_USER: ubuntu
+
+jobs:
+  # ── Only build what changed (cheap no-op deploys for docs-only pushes) ──
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+      any_changed: ${{ steps.check.outputs.any_changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/backend/**'
+              - 'docker-compose.prod.yml'
+              - '.github/workflows/deploy.yml'
+            web:
+              - 'apps/frontend/**'
+              - 'docker-compose.prod.yml'
+              - '.github/workflows/deploy.yml'
+      - name: Any service changed?
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] \
+             || [ "${{ steps.filter.outputs.api }}" = "true" ] \
+             || [ "${{ steps.filter.outputs.web }}" = "true" ]; then
+            echo "any_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "any_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ── Build + push the changed images to ECR (api, web) ──
+  build:
+    name: Build & push images
+    needs: changes
+    if: needs.changes.outputs.any_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Ensure ECR repositories exist
+        run: |
+          for repo in payback/api payback/web; do
+            aws ecr describe-repositories --repository-names "$repo" --region "$AWS_REGION" >/dev/null 2>&1 \
+              || aws ecr create-repository --repository-name "$repo" --region "$AWS_REGION" >/dev/null
+          done
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push API
+        if: needs.changes.outputs.api == 'true' || github.event_name == 'workflow_dispatch'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/backend
+          file: ./apps/backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/api:latest
+            ${{ env.ECR_REGISTRY }}/api:${{ github.sha }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build & push Web
+        if: needs.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/frontend
+          file: ./apps/frontend/Dockerfile
+          push: true
+          # NEXT_PUBLIC_* is compile-time — bake the prod API origin here.
+          build-args: |
+            NEXT_PUBLIC_API_BASE=https://api.payback.mhannani.me
+          tags: |
+            ${{ env.ECR_REGISTRY }}/web:latest
+            ${{ env.ECR_REGISTRY }}/web:${{ github.sha }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  # ── Deploy: SSH to the EC2, pull the new images, compose up, health-check ──
+  deploy:
+    name: Deploy to EC2
+    needs: [changes, build]
+    if: always() && needs.changes.outputs.any_changed == 'true' && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy.pem
+          chmod 600 ~/.ssh/deploy.pem
+          ssh-keyscan -t ed25519 "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy
+        env:
+          SSH_KEY: ~/.ssh/deploy.pem
+          SERVER: ${{ env.EC2_USER }}@${{ env.EC2_HOST }}
+          REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-north-1.amazonaws.com/payback
+        run: |
+          ssh -i "$SSH_KEY" "$SERVER" \
+            REGISTRY="$REGISTRY" AWS_REGION="${{ env.AWS_REGION }}" \
+            bash -s << 'DEPLOY_SCRIPT'
+            set -euo pipefail
+            cd ~/projects/payback-assistant
+
+            # Latest compose file + seeders + the catalog data (the showcase branch — not main).
+            git fetch origin feat/showcase-widget
+            git reset --hard origin/feat/showcase-widget
+
+            # Selective builds mean SHA tags may be absent for an unchanged service, so deploy by :latest.
+            export ECR_REGISTRY="$REGISTRY"
+            export IMAGE_TAG=latest
+
+            aws ecr get-login-password --region "$AWS_REGION" \
+              | docker login --username AWS --password-stdin "$REGISTRY"
+
+            echo "Pulling images…"
+            docker compose --env-file .env.prod -f docker-compose.prod.yml pull api web
+
+            echo "Starting (db → seed → api → web)…"
+            docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --remove-orphans
+
+            # The seed one-shot must exit 0 (schema + catalog + embeddings ready).
+            seed_exit=$(docker inspect -f '{{.State.ExitCode}}' payback_seed_prod 2>/dev/null || echo missing)
+            if [ "$seed_exit" != "0" ]; then
+              echo "Seed container exited with status: $seed_exit" >&2
+              docker logs payback_seed_prod 2>&1 | tail -50 >&2
+              exit 1
+            fi
+
+            echo "Waiting for API health…"
+            for i in $(seq 1 30); do
+              docker exec payback_api_prod curl -sf http://localhost:8000/health >/dev/null 2>&1 && break
+              sleep 2
+            done
+            docker exec payback_api_prod curl -sf http://localhost:8000/health >/dev/null 2>&1 \
+              || { echo "API did not become healthy" >&2; exit 1; }
+
+            echo "Deploy complete."
+          DEPLOY_SCRIPT
+
+  skip:
+    name: No changes
+    needs: changes
+    if: needs.changes.outputs.any_changed == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No api/web changes — nothing to deploy."

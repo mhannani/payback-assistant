@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,8 +18,10 @@ from app.retrieval.base import Retriever
 from app.retrieval.base import backend_capabilities
 from app.retrieval.factory import get_cached_retriever
 from app.retrieval.types import Sort
+from app.products import router as products_router
 from app.schemas import AssistResponse, ProductOut
 from app.shared.partner import PartnerSlug
+from app.voice import router as voice_router
 
 
 @asynccontextmanager
@@ -45,6 +48,22 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+# The embeddable widget is served from a different origin than the API, so the browser's /assist
+# calls are cross-origin and need CORS. (CORS does not cover WebSockets — the dictate socket guards
+# itself.) credentials stay off: the widget sends no cookies, only JSON.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_settings().cors_origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# The widget mic's Deepgram-proxy WebSocket.
+app.include_router(voice_router)
+# The catalog browse endpoint (the products table page).
+app.include_router(products_router)
 
 
 def _retriever() -> Retriever:

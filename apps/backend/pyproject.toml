@@ -23,6 +23,10 @@ dependencies = [
     "pydantic-settings>=2.14.2",
     "sqlalchemy[asyncio]>=2.0.51",
     "uvicorn[standard]>=0.49.0",
+    # The voice-dictation proxy opens a client WebSocket to Deepgram. A direct dep (it's imported in
+    # app/voice/dictation.py) though uvicorn[standard] pulls it transitively too; ≥12 has the
+    # `additional_headers=` kwarg the Deepgram auth header needs.
+    "websockets>=12",
     # Managed embedding providers (swappable via EMBEDDING_PROVIDER). Embedder impls lazy-import
     # their SDK, so only the configured one initializes a client.
     "google-cloud-aiplatform>=1.130.0",

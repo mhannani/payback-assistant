@@ -30,3 +30,15 @@ def test_override_accepts_plain_scheme_and_adds_asyncpg() -> None:
     s = Settings(_env_file=None, DATABASE_URL="postgresql://u:p@/db?host=/cloudsql/x")
     assert s.database_url == "postgresql+asyncpg://u:p@/db?host=/cloudsql/x"
     assert s.checkpoint_db_url == "postgresql://u:p@/db?host=/cloudsql/x"
+
+
+def test_cors_origins_default_is_a_list() -> None:
+    s = Settings(_env_file=None)
+    assert s.cors_origins == ["https://payback.mhannani.me", "http://localhost:3000"]
+
+
+def test_cors_origins_parses_comma_separated_env(monkeypatch) -> None:
+    # The friendly env form (not JSON) must split into a list — else the app crashes at startup.
+    # Set the real env var (not a kwarg): NoDecode + the validator only run in the EnvSettingsSource.
+    monkeypatch.setenv("CORS_ORIGINS", "https://a.test, https://b.test ,")
+    assert Settings(_env_file=None).cors_origins == ["https://a.test", "https://b.test"]
