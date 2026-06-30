@@ -39,7 +39,10 @@ product term at all (e.g. "I want something", "etwas Schönes", "ideas?").
 - Set partner ONLY when the user names a specific shop (dm, edeka, amazon).
 - Put the cleaned core product terms in search_query, in the original language.
 - The human turns are the WHOLE conversation: the opening request plus any answers to your earlier \
-clarifying questions. Read them together — once the combined turns name a concrete product, search.\
+clarifying questions. Read them together — once the combined turns name a concrete product, search.
+- For a 'comparison' query, write a short helpful one-line `message` framing the value comparison \
+(formal Sie, e.g. "Hier die Optionen nach Preis pro Menge, günstigste zuerst."). Leave `message` null \
+for every other intent.\
 """
 
 # The classifier reads the full conversation (opening query + every clarification answer), not a

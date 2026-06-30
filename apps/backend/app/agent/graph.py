@@ -5,6 +5,7 @@ The brief's agent in one diagram::
     START → classify ─┬─ search ─┬─ (hits)        → END
                       │          └─ (none) ─┬─ budget left → clarify
                       │                     └─ capped      → END (empty)
+                      ├─ compare (value-ranked)           → END
                       ├─ route                            → END
                       ├─ decline                          → END (out of scope)
                       └─ clarify → (interrupt; on resume) → classify
@@ -62,6 +63,7 @@ from app.shared.partner import partner_search_url
 _CLARIFY = NextBestAction.CLARIFY.value
 _SEARCH = NextBestAction.SEARCH.value
 _ROUTE = NextBestAction.ROUTE_TO_PARTNER.value
+_COMPARE = NextBestAction.COMPARE.value
 _DECLINE = NextBestAction.DECLINE.value
 
 # Convergence guard: the most clarifying questions one conversation may ask before the agent forces a
@@ -73,7 +75,7 @@ _MAX_CLARIFICATIONS = 3
 
 async def classify_node(
     state: AgentState,
-) -> Command[Literal["search", "route_to_partner", "clarify", "decline"]]:
+) -> Command[Literal["search", "route_to_partner", "clarify", "decline", "compare"]]:
     """Classify the WHOLE conversation → next action, then route there in one step.
 
     The ``Command[Literal[...]]`` return annotation is how LangGraph discovers this node's possible
@@ -112,6 +114,20 @@ async def classify_node(
 async def search_node(state: AgentState) -> Command[Literal["clarify", "__end__"]]:
     """Run the retriever; on no results, redirect to clarify instead of a dead-end empty list."""
     return await _search_then_route(state["classification"], state.get("clarify_count", 0))
+
+
+async def compare_node(state: AgentState) -> Command[Literal["__end__"]]:
+    """Weigh options: search ranked by VALUE (price-per-unit) and end with the results to compare.
+
+    A comparison query ("welche Nudeln sind am günstigsten?") forces ``Sort.PRICE_LOW`` so the
+    retriever orders by price-per-unit — the cheapest *value* first, not the cheapest sticker — even if
+    the query had no explicit price word. ``classification.partner`` still scopes the search, so
+    "… bei dm" compares within dm (decide_action routes comparison here before route for exactly that).
+    Unlike search, an empty result ENDS cleanly (no clarify redirect): a comparison is explicit, so
+    "nothing to compare" is the honest terminal answer, surfaced as an empty compare response.
+    """
+    hits = await _run_search(state["classification"], sort_override=Sort.PRICE_LOW)
+    return Command(goto=END, update={"hits": hits})
 
 
 def route_node(state: AgentState) -> Command[Literal["__end__"]]:
@@ -179,15 +195,19 @@ async def _search_then_route(classification: Classification, clarify_count: int)
     )
 
 
-async def _run_search(classification: Classification) -> list[Any]:
+async def _run_search(
+    classification: Classification, *, sort_override: Sort | None = None
+) -> list[Any]:
     """Call the same retriever the /search endpoint uses, with the agent's extracted parameters.
 
     The retriever owns its own data access, so the node passes only the search parameters.
+    ``sort_override`` forces an ordering regardless of what the model extracted — the compare node
+    uses it to always rank by value (PRICE_LOW), even when the query had no explicit price word.
     """
     return await get_cached_retriever().search(
         classification.search_query,
         partner=classification.partner,
-        sort=classification.sort or Sort.RELEVANCE,
+        sort=sort_override or classification.sort or Sort.RELEVANCE,
         require_tags=classification.require_tags or None,
     )
 
@@ -219,6 +239,7 @@ def build_graph() -> StateGraph:
     builder.add_node("classify", classify_node)
     builder.add_node(_SEARCH, search_node)
     builder.add_node(_ROUTE, route_node)
+    builder.add_node(_COMPARE, compare_node)
     builder.add_node(_CLARIFY, clarify_node)
     builder.add_node(_DECLINE, decline_node)
     builder.add_edge(START, "classify")

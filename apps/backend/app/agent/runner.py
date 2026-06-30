@@ -21,6 +21,7 @@ from app.llm.cost import usage_from_callback
 from app.schemas import (
     AssistResponse,
     ClarifyResponse,
+    CompareResponse,
     DeclineResponse,
     ProductOut,
     ProductsResponse,
@@ -117,9 +118,18 @@ def _to_response(result: dict, thread_id: str, usage: UsageOut | None) -> Assist
             message=_route_message(classification),
         )
 
-    return ProductsResponse(
-        **common, items=[ProductOut.from_hit(h) for h in result.get("hits", [])]
-    )
+    items = [ProductOut.from_hit(h) for h in result.get("hits", [])]
+
+    if action is NextBestAction.COMPARE:
+        # Value comparison: items come back price-per-unit sorted, so the first is the best pick.
+        return CompareResponse(
+            **common,
+            items=items,
+            cheapest_pick=items[0] if items else None,
+            message=classification.message,
+        )
+
+    return ProductsResponse(**common, items=items, message=classification.message)
 
 
 def _route_message(classification) -> str:

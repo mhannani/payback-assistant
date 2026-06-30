@@ -27,6 +27,7 @@ def _classification(**overrides) -> Classification:
         sort=Sort.RELEVANCE,
         require_tags=[],
         search_query="",
+        message=None,
     )
     base.update(overrides)
     return Classification(**base)

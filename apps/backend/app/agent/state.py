@@ -64,18 +64,23 @@ def decide_action(c: Classification) -> NextBestAction:
 
     1. off-topic, or a support/orders question → **decline** (we hand off, not search);
     2. too vague                               → **clarify** (ask one question);
-    3. names a specific shop                   → **route to that partner**;
-    4. otherwise                               → **search** all partners.
+    3. weighing options                        → **compare** (value-ranked, with a best pick);
+    4. names a specific shop                   → **route to that partner**;
+    5. otherwise                               → **search** all partners.
 
     ``customer_support`` declines rather than clarifies: the assistant has no order/returns data, so
     asking "what are you looking for?" is wrong — the decline node instead hands the shopper to the
-    partner's real service desk. ``off_topic`` declines too (out of scope entirely). Both produce a
-    helpful message; the node tells them apart by intent.
+    partner's real service desk. ``off_topic`` declines too (out of scope entirely). ``comparison`` is
+    checked **before** route on purpose: "vergleiche die günstigsten Nudeln bei dm" should *compare
+    within dm*, not route away to dm's own search — so a named partner scopes the comparison instead of
+    overriding it.
     """
     if c.intent in (Intent.OFF_TOPIC, Intent.CUSTOMER_SUPPORT):
         return NextBestAction.DECLINE
     if c.needs_clarification:
         return NextBestAction.CLARIFY
+    if c.intent is Intent.COMPARISON:
+        return NextBestAction.COMPARE
     if c.partner is not None:
         return NextBestAction.ROUTE_TO_PARTNER
     return NextBestAction.SEARCH

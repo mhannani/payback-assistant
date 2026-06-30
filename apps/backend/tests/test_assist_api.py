@@ -87,6 +87,21 @@ async def test_resume_unknown_thread_is_404(agent_client) -> None:
     assert resp.status_code == 404
 
 
+async def test_comparison_query_returns_value_comparison(agent_client) -> None:
+    # A comparison query answers with a value comparison: items ranked by price-per-unit, a best pick,
+    # and unit prices on the items. "Nudeln" exists across partners with weights, so €/100g is real.
+    resp = await agent_client.post(
+        "/assist", json={"query": "vergleiche die günstigsten Nudeln"}
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["type"] == "compare"
+    assert len(body["items"]) > 0
+    assert body["cheapest_pick"] is not None
+    # At least one item carries a normalized unit price (the comparison metric).
+    assert any(p["unit_price_cents"] is not None for p in body["items"])
+
+
 async def test_off_topic_query_is_declined(agent_client) -> None:
     # A non-shopping request (write code) must be politely refused, not searched or clarified.
     resp = await agent_client.post("/assist", json={"query": "Schreib mir ein Python-Skript"})

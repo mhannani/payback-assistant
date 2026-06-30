@@ -6,7 +6,7 @@ rather than being copied into each strategy.
 
 from __future__ import annotations
 
-from app.retrieval.types import Candidate
+from app.retrieval.types import Candidate, SearchHit
 
 # Unit-kind ordering for the price sort key. The integer is NOT a preference — it only
 # keeps the three price bases in separate buckets so they never compare against each other.
@@ -34,3 +34,20 @@ def price_per_unit(candidate: Candidate) -> tuple[int, float]:
     if candidate.volume_ml:
         return (_VOLUME, candidate.price_cents / candidate.volume_ml * 100)
     return (_UNITLESS, float(candidate.price_cents))
+
+
+def unit_price_from_hit(hit: SearchHit) -> tuple[str, int] | None:
+    """A *displayable* unit price for a result — the same value the PRICE_LOW ranker sorts by, but
+    for a public ``SearchHit`` and shaped for the wire.
+
+    Returns ``(basis, cents)`` where ``basis`` is ``"per_100g"`` / ``"per_100ml"`` and ``cents`` is the
+    price normalized to that 100-unit base (rounded to whole cents — the comparison metric, not the
+    shelf price). Returns ``None`` for an item with no parseable size (e.g. a Kindle), where a unit
+    price is meaningless. Shares ``price_per_unit``'s formula so the comparison the API shows and the
+    order the ranker produces agree on what "value" means — one source of truth.
+    """
+    if hit.weight_g:
+        return ("per_100g", round(hit.price_cents / hit.weight_g * 100))
+    if hit.volume_ml:
+        return ("per_100ml", round(hit.price_cents / hit.volume_ml * 100))
+    return None

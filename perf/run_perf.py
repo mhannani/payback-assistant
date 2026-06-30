@@ -9,7 +9,8 @@ answer the brief's optional performance question: does it scale, and what does i
   1000 requests. No hand-rolled pricing: the number is whatever LiteLLM charged.
 
 The query mix is reused from ``demo/queries.json`` so the load reflects real intents (search,
-route, vague→clarify). ``N`` is bounded and logged so a run is a few cents, not a surprise bill.
+compare, route, vague→clarify, decline). ``N`` is bounded and logged so a run is a few cents, not a
+surprise bill.
 
 ``make perf`` runs it in the api container against the local service (needs ``OPENAI_API_KEY`` set,
 since it calls the real LLM); point ``--base-url`` at a deployed URL to test that instead.

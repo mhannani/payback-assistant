@@ -1,31 +1,46 @@
 {
-  "_comment": "Five demo queries, each a distinct intent × language. run_demo.py loads these, sends each to POST /assist, and prints the JSON. The vague one triggers a clarifying question, which the runner then answers via /assist/resume using its `clarify_answer`.",
+  "_comment": "Demo queries — each a distinct intent × capability × language, covering every branch of the agent. run_demo.py sends each to POST /assist and prints the JSON; the vague one triggers a clarifying question, which the runner answers via /assist/resume using its `clarify_answer`.",
   "queries": [
     {
-      "label": "German · specific + price intent",
+      "label": "German · specific + price intent → products",
       "query": "günstige Windeln",
       "expect": "products"
     },
     {
-      "label": "English · cross-lingual search",
+      "label": "English · cross-lingual search → products (English query, German catalog)",
       "query": "pasta dinner",
       "expect": "products"
     },
     {
-      "label": "German · navigational (route to a partner)",
+      "label": "German · dietary filter → products (require_tags)",
+      "query": "vegane Schokolade",
+      "expect": "products"
+    },
+    {
+      "label": "German · comparison → value-ranked (price per unit) + cheapest pick",
+      "query": "vergleiche die günstigsten Nudeln",
+      "expect": "compare"
+    },
+    {
+      "label": "German · navigational → route to a partner's own search",
       "query": "zeig mir Kaffee bei edeka",
       "expect": "route"
     },
     {
-      "label": "English · vague → clarifying question, then resume",
+      "label": "English · vague → clarifying question, then resume the same thread",
       "query": "I want something to eat",
       "expect": "clarify",
       "clarify_answer": "chocolate"
     },
     {
-      "label": "German · dietary filter",
-      "query": "vegane Schokolade",
-      "expect": "products"
+      "label": "German · customer support → hand-off to the partner's real service desk",
+      "query": "Wo ist meine Bestellung bei dm?",
+      "expect": "decline"
+    },
+    {
+      "label": "German · off-topic → politely declined (out of scope)",
+      "query": "Wie ist das Wetter heute?",
+      "expect": "decline"
     }
   ]
 }

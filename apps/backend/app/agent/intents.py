@@ -47,10 +47,13 @@ class NextBestAction(StrEnum):
     SEARCH: the query is specific → run a catalog search and return products.
     CLARIFY: the query is too vague to act on → ask one clarifying question.
     ROUTE_TO_PARTNER: the query is navigational ("show me dm's …") → search scoped to a partner.
-    DECLINE: the query is out of scope (OFF_TOPIC) → politely refuse; a terminal, no-retrieval action.
+    COMPARE: the query weighs options ("which pasta is cheapest?") → search ordered by value
+        (price-per-unit) and surface a best-value pick, so the shopper can compare like with like.
+    DECLINE: the query is out of scope (OFF_TOPIC / support) → a helpful hand-off; terminal, no search.
     """
 
     SEARCH = "search"
     CLARIFY = "clarify"
     ROUTE_TO_PARTNER = "route_to_partner"
+    COMPARE = "compare"
     DECLINE = "decline"

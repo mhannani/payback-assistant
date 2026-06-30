@@ -26,6 +26,7 @@ def _classification(**overrides) -> Classification:
         sort=Sort.RELEVANCE,
         require_tags=[],
         search_query="Windeln",
+        message=None,
     )
     base.update(overrides)
     return Classification(**base)
@@ -65,6 +66,17 @@ def test_decline_wins_over_partner_and_clarify() -> None:
         intent=Intent.OFF_TOPIC, needs_clarification=True, partner=PartnerSlug.DM
     )
     assert decide_action(c) is NextBestAction.DECLINE
+
+
+def test_comparison_query_compares() -> None:
+    assert decide_action(_classification(intent=Intent.COMPARISON)) is NextBestAction.COMPARE
+
+
+def test_comparison_wins_over_named_partner() -> None:
+    # "vergleiche die günstigsten Nudeln bei dm" compares WITHIN dm — comparison beats routing, so a
+    # named partner scopes the comparison rather than handing off to dm's own search.
+    c = _classification(intent=Intent.COMPARISON, partner=PartnerSlug.DM)
+    assert decide_action(c) is NextBestAction.COMPARE
 
 
 def test_clarify_wins_over_route_when_vague() -> None:

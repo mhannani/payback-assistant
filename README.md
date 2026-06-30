@@ -1,35 +1,34 @@
 # PAYBACK Assistant
 
-Backend for a multilingual shopping assistant. One natural-language query (German or English) returns a
-ranked list of products across three partner catalogs — dm, EDEKA, and Amazon — in one response.
+A multilingual shopping assistant backend: one natural-language query (German or English) →
+recommended products across three partner catalogs (dm · EDEKA · Amazon), in one response.
 
-## Motivation
+It is built in three layers, each independently testable:
 
-PAYBACK connects shoppers to hundreds of partner businesses, each with its own catalog. A shopper
-doesn't want to pick a partner first and search within it — they want to describe what they need and get
-the best options, wherever they happen to be sold. That is awkward today: the catalogs differ in
-structure and language, "best" mixes relevance with price and partner fairness, and a request can arrive
-in German or English with no prior history to lean on.
-
-This service is that single entry point. It accepts one free-text query and answers with products drawn
-from every partner at once — bridging the catalogs at ingestion, matching meaning and exact terms across
-languages, and ranking so no partner is unfairly buried or boosted.
-
-Three layers: the recommendation engine (ingestion, indexing, cross-catalog retrieval behind
-`/search`), a LangGraph intent agent over it (`/assist`), and cloud-native deployment (Terraform for
-GCP and AWS). See [Status](#status).
-
-## Example
-
-Start the stack, load the catalogs, and ask for a pasta dinner — three commands, then one request:
+1. **Recommendation engine** — bridges three disparate catalogs at ingestion, then retrieves across
+   all of them with hybrid (semantic + keyword) search and fair cross-partner ranking — behind `/search`.
+2. **Intent agent** — a LangGraph state machine over the engine that reads a raw query's *intent* and
+   decides the next best action: search, compare, clarify, route, or decline — behind `/assist`.
+3. **Cloud-native deployment** — one lean image, provisioned on GCP (Cloud Run) or AWS (ECS) by parallel
+   Terraform modules.
 
 ```bash
-make up && make seed && make embed
-curl 'http://localhost:8000/search?q=pasta%20dinner&top_k=3'
+make up && make seed && make embed                      # start · load catalogs · embed
+curl 'localhost:8000/search?q=pasta%20dinner&top_k=3'   # → German products for an English query
 ```
 
-The response is a ranked list of products — list order is the ranking. An English query returns German
-products, drawn from two different partners:
+## Why
+
+PAYBACK connects shoppers to hundreds of partner businesses, each with its own catalog. A shopper
+shouldn't have to pick a partner first and search within it — they want to describe what they need and
+get the best options wherever they're sold. That's hard today: the catalogs differ in structure and
+language, "best" mixes relevance with price and partner fairness, and a query arrives in German or
+English with no history to lean on. This service is the single entry point that closes that gap —
+bridging the catalogs at ingestion, matching meaning *and* exact terms across languages, and ranking so
+no partner is unfairly buried or boosted.
+
+That `pasta dinner` query returns a ranked list — list order *is* the ranking. An English query
+returns German products from two different partners:
 
 ```json
 [
@@ -42,10 +41,9 @@ products, drawn from two different partners:
 ]
 ```
 
-(`id`, `description`, and `image_url` are also returned; trimmed here for readability.)
-
-Everything runs on a local Docker stack; embeddings and the agent use a managed provider, so an
-OpenAI (or Vertex) key is required.
+(`id`, `description`, and `image_url` are also returned; trimmed here.) Everything runs on a local
+Docker stack; embeddings and the agent are managed-provider calls, so an OpenAI (or Vertex) key is
+required.
 
 ---
 
@@ -58,6 +56,7 @@ OpenAI (or Vertex) key is required.
 - [API](#api)
 - [Running locally](#running-locally)
 - [Evaluation & strategy configuration](#evaluation--strategy-configuration)
+- [Performance & cost](#performance--cost)
 - [Project structure](#project-structure)
 - [Tech stack](#tech-stack)
 - [Testing](#testing)
@@ -71,7 +70,7 @@ OpenAI (or Vertex) key is required.
 | Task | Status |
 |---|---|
 | 1 — Recommendation engine | ✅ Done — ingestion adapters, embeddings, hybrid retrieval, fair cross-partner ranking, `/search`, eval harness |
-| 2 — Intent agent | ✅ Done — LangGraph agent: intent + language classification → search / clarify / route, durable clarify/resume, `/assist` |
+| 2 — Intent agent | ✅ Done — LangGraph agent: intent + language classification → search / compare / clarify / route / decline, durable multi-turn clarify→resume, `/assist` |
 | 3 — Cloud deployment | ✅ Done — multi-stage image, Terraform for GCP (Cloud Run) and AWS (ECS Fargate), each with managed Postgres/pgvector + secrets; load-test + cost-per-1000 report (`make perf`) |
 
 `/search` is a retrieval primitive: it does not parse intent from the query (it won't read "cheap" from
@@ -104,6 +103,9 @@ canonical `Product`. Normalization runs once, at load time — not per request:
 Fields that can be compared (price, size) or filtered (tags, partner) become typed columns; everything
 descriptive goes into a `description` that is embedded.
 
+<details>
+<summary><b>Ingestion pipeline diagram</b> — disparate feeds → one canonical <code>products</code> table</summary>
+
 ```text
  PARTNER FEEDS (disparate)                     INGESTION (make seed + make embed)
  ┌─────────────────────────────────┐
@@ -127,6 +129,8 @@ descriptive goes into a `description` that is embedded.
                                                │  └────────────────────────────┴───────────────┘ │
                                                └───────────────────────────────────────────────────┘
 ```
+
+</details>
 
 One `products` table backs everything: an HNSW index for semantic search, a GIN index on a German
 `tsvector` for keyword search, and GIN indexes on `tags` and `attrs`. Schema and embedding details are in
@@ -153,6 +157,9 @@ The two ranked lists are merged with **Reciprocal Rank Fusion** (k=60; Cormack e
 `score(d) = Σ 1/(k + rankᵢ(d))`. Fusing on rank rather than raw score avoids reconciling the arms'
 incomparable scales and rewards products both arms return. With no user history, the query alone drives
 the result.
+
+<details>
+<summary><b>Query-path diagram</b> — embed → two arms → fuse → filter → rank</summary>
 
 ```text
   GET /search?q=günstige Windeln & sort=price_low  (+ optional partner / require_tags)
@@ -200,6 +207,8 @@ the result.
                                    price_cents · currency · tags · score
 ```
 
+</details>
+
 Two stages decide quality, both selectable by config:
 
 - **Candidate filter** — ANN always returns the nearest N, including irrelevant ones. The default
@@ -219,30 +228,42 @@ Each decision, with alternatives, is an ADR:
 | [0004](docs/decisions/0004-provider-agnostic-embeddings.md) | Provider-agnostic embeddings |
 | [0005](docs/decisions/0005-candidate-filtering.md) | Candidate filtering to cut the vector noise tail |
 | [0006](docs/decisions/0006-intent-agent-langgraph.md) | Intent agent as a LangGraph state machine |
+| [0007](docs/decisions/0007-bigquery-retrieval-backend.md) | BigQuery as the GCP vector index, behind the `VectorIndex` seam |
 
 ---
 
 ## Intent agent
 
-The agent turns a raw query into an action. It is a **LangGraph** state machine: an LLM classifies
-intent and language, a small policy picks the next action, and the agent returns a structured
-response — products, a clarifying question, or a hand-off to a partner's own search.
+A **LangGraph** state machine over the engine: one LLM call classifies intent + language, a small pure
+policy picks the **next best action**, and the agent returns a structured response. Five actions:
+
+| Action | Example query | What it returns |
+|---|---|---|
+| **search** | `günstige Windeln` | products from `/search`; on no match, asks to refine (never an empty list) |
+| **compare** | `vergleiche die günstigsten Nudeln` | products ranked by **price-per-unit** (best *value*, not cheapest sticker) + a `cheapest_pick` |
+| **clarify** | `ich suche etwas` | one question, then **pauses** (`interrupt`); resumes the same thread on `/assist/resume` |
+| **route** | `Kaffee bei edeka` | a deep-link into that partner's own product search |
+| **decline** | `Wo ist meine Bestellung?` / `Wie ist das Wetter?` | a hand-off to the partner's real service desk, or a polite out-of-scope refusal |
 
 <p align="center">
-  <img src="docs/images/agent_graph.png" alt="Agent graph" width="360">
+  <img src="docs/images/agent_graph.png" alt="Agent graph" width="420">
 </p>
 
-- **search** — a concrete request (e.g. `günstige Windeln`) → runs `/search` and returns products.
-  If nothing matches, it asks the user to refine rather than returning an empty list.
-- **clarify** — a vague request (e.g. `ich suche etwas`) → asks one question and **pauses**
-  (`interrupt`); the client answers via `/assist/resume` and the agent continues the same thread.
-- **route** — a navigational request (e.g. `Kaffee bei edeka`) → hands off a deep-link into that
-  partner's own product search.
+Three things make it more than a router:
 
-The LLM is reached through a LiteLLM gateway, so the provider is a config choice (`LLM_MODEL`,
-default `openai/gpt-4o-mini`). Conversation state is persisted in Postgres (`AsyncPostgresSaver`), so
-a paused clarify survives a restart and works across instances. See
-[ADR 0006](docs/decisions/0006-intent-agent-langgraph.md).
+- **Multi-turn refinement that converges.** Clarify answers accumulate via LangGraph's `add_messages`,
+  so context compounds across turns; a cap then forces a search — it always lands on products, never
+  clarifies forever.
+- **Real comparison.** `compare` reuses the ranker's price-per-unit logic, so each product carries a
+  normalized `unit_price_cents` + `unit_basis` (€/100 g · €/100 ml) — the comparison the API shows and
+  the order the ranker produces agree on "value".
+- **Scope, structurally.** Off-topic and orders/returns are declined by the *classifier's intent* (not
+  phrase matching); support hands off to dm · EDEKA · Amazon's real contacts. German replies use the
+  formal **Sie**; oversized bodies are rejected before any model call.
+
+The LLM is reached through a LiteLLM gateway, so the provider is a config choice (`LLM_MODEL`, default
+`openai/gpt-4o-mini`). Conversation state persists in Postgres (`AsyncPostgresSaver`), so a paused
+clarify survives a restart and spans instances. See [ADR 0006](docs/decisions/0006-intent-agent-langgraph.md).
 
 ---
 
@@ -250,16 +271,25 @@ a paused clarify survives a restart and works across instances. See
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /assist` | Natural-language query → products, a clarifying question, or a partner hand-off |
+| `POST /assist` | Natural-language query → products, a value comparison, a clarifying question, a partner hand-off, or a decline |
 | `POST /assist/resume` | Answer a clarifying question and continue the conversation |
 | `GET /search` | Search across all partner catalogs (the mechanical primitive the agent drives) |
 | `GET /config` | The active (non-secret) config — embedder, model, dimension, filter, ranker |
 | `GET /health` | Liveness probe |
 | `GET /ready` | Readiness probe (checks the database) |
 
-`POST /assist` takes `{ "query": "..." }` and returns one of three shapes, tagged by `type`:
-`products` (a ranked list), `clarify` (a `question` + a `thread_id` to resume with), or `route`
-(a `deeplink` into a partner's search). `POST /assist/resume` takes `{ "thread_id", "answer" }`.
+`POST /assist` takes `{ "query": "..." }` and returns a discriminated union tagged by `type` — the
+client switches on one field:
+
+| `type` | Payload | When |
+|---|---|---|
+| `products` | `items[]` | a concrete request |
+| `compare` | `items[]` (price-per-unit sorted) · `cheapest_pick` · `message` | weighing options |
+| `clarify` | `question` · `thread_id` | too vague — answer via `/assist/resume` |
+| `route` | `deeplink` · `partner` · `message` | navigational ("… bei edeka") |
+| `decline` | `message` · `partner?` | out of scope (support hand-off / off-topic) |
+
+`POST /assist/resume` takes `{ "thread_id", "answer" }` and continues the paused thread.
 
 `GET /search` parameters:
 
@@ -288,8 +318,9 @@ make embed   # compute embeddings via the provider (required before search retur
 make test    # run the test suite
 ```
 
-See the whole assistant at once — five queries across languages and intents (incl. a
-clarify→resume turn), printing the JSON (needs an LLM key in `.env.dev`):
+See the whole assistant at once — one query per intent branch (search · compare · route ·
+clarify→resume · decline) across German and English, printing the JSON (needs an LLM key in
+`.env.dev`):
 
 ```bash
 make demo    # → demo/run_demo.py
@@ -309,6 +340,44 @@ curl 'http://localhost:8000/search?q=pasta%20dinner'                # English �
 curl 'http://localhost:8000/search?q=Anker'                         # exact brand
 curl 'http://localhost:8000/search?q=Schokolade&require_tags=vegan' # dietary filter
 curl 'http://localhost:8000/search?q=günstige%20Windeln&sort=price_low'
+```
+
+**Talk to the agent** (`POST /assist`) — one query, one of five typed responses. Each line below
+exercises a different branch of the graph:
+
+```bash
+A() { curl -s localhost:8000/assist -H 'content-type: application/json' -d "{\"query\":\"$1\"}"; }
+
+A 'vergleiche die günstigsten Nudeln'   # → compare  (price-per-unit, cheapest pick)
+A 'zeig mir Kaffee bei edeka'           # → route    (deep-link into EDEKA's own search)
+A 'Wo ist meine Bestellung bei dm?'     # → decline  (hand-off to dm's real service desk)
+A 'Wie ist das Wetter heute?'           # → decline  (off-topic, politely refused)
+A 'ich suche etwas'                     # → clarify  (asks one question + a thread_id)
+```
+
+A **comparison** answers with value-ranked products and a best-value pick:
+
+```jsonc
+{ "type": "compare",
+  "message": "Hier die Optionen nach Preis pro Menge, günstigste zuerst.",
+  "cheapest_pick": { "name": "Spaghetti N° 5", "price_cents": 150,
+                     "unit_price_cents": 15, "unit_basis": "per_100g" },
+  "items": [ /* 10 products, cheapest €/100 g first */ ] }
+```
+
+A **support** query is handed off to the partner's real customer service (orders/returns aren't ours):
+
+```jsonc
+{ "type": "decline", "intent": "customer_support", "partner": "dm",
+  "message": "Bei Fragen zu Bestellungen oder Retouren hilft Ihnen der dm-drogerie markt-Kundenservice
+              unter 0800 3658633 (Mo–Sa 8–20 Uhr) weiter. Weitere Wege: ServiceCenter@dm.de …" }
+```
+
+A **clarify** pauses; continue the same thread with its `thread_id`:
+
+```bash
+curl -s localhost:8000/assist/resume -H 'content-type: application/json' \
+     -d '{"thread_id":"<from the clarify response>","answer":"italienische Nudeln"}'
 ```
 
 `make help` lists all targets; OpenAPI docs are at `http://localhost:8000/docs`. The API listens on
@@ -356,11 +425,11 @@ callback, priced by LiteLLM (no hand-maintained price table; see
 
 | Metric | Value (30 requests, concurrency 5) |
 |---|---|
-| Latency p50 / p95 | ~2–4.5 s / ~7 s |
-| LLM cost per request | ~$0.00014 |
-| **Cost per 1000 requests** | **~$0.14** |
+| Latency p50 / p95 / p99 | 1560 ms / 3519 ms / 3526 ms |
+| LLM cost per request | ~$0.000180 |
+| **Cost per 1000 requests** | **~$0.18** |
 
-Latency tracks the single LLM classification call, so it varies run-to-run (p50 ~2–4.5 s); the cost
+Latency tracks the single LLM classification call, so it varies run-to-run (p50 ~1.6 s); the cost
 is near-constant.
 
 ```bash
@@ -429,7 +498,7 @@ Makefile                 up / seed / embed / eval / demo / perf / test / lint
 
 ## Testing
 
-`make test` runs 111 tests. The behavioural ones cover the cases specific to this problem:
+`make test` runs the suite (145 tests). The behavioural ones cover the cases specific to this problem:
 
 - cross-lingual retrieval (English `pasta dinner` finds German Spaghetti; the keyword arm returns nothing
   for it, so the hybrid is doing real work)
@@ -437,17 +506,23 @@ Makefile                 up / seed / embed / eval / demo / perf / test / lint
   test for the per-partner-normalization bug)
 - price-per-unit ordering (`sort=price_low` compares like units only, re-orders the relevant set)
 - empty results when nothing matches, rather than noise
+- agent convergence (a multi-turn clarify loop always terminates in products — never clarifies forever)
+- scope guardrails (off-topic and support queries decline + hand off; oversized input is rejected)
 
 ---
 
 ## Deployment
 
-The **production image** (multi-stage, non-root) is lean — embeddings are served by a managed
-provider (OpenAI / Vertex), so it carries no model and no torch, keeping the image small and cold
-starts fast (the brief's "Vertex AI for model serving"). It deploys two ways:
+The **lean demo image** (multi-stage, non-root) carries no model and no torch — embeddings are served
+by a managed provider (OpenAI / Vertex), keeping the image small and cold starts fast (the brief's
+"Vertex AI for model serving"). It deploys two ways:
 
 **Container on a host.** `docker compose` or a single container on any server — the simplest path and
 how the live demo runs.
+
+The cloud-deployed endpoints are **unauthenticated by design** (Cloud Run `allUsers`, ALB open to
+`0.0.0.0/0`) so a reviewer can `curl` them directly without credentials. That is a deliberate
+demo trade-off, not production posture — see **Hardening** below.
 
 **Cloud-native, as Terraform.** Two parallel modules provision the same architecture on either cloud
 (both `terraform validate` clean):
@@ -470,6 +545,19 @@ DB as a managed service, and exposes the service URL as an output. See each modu
   in BigQuery `VECTOR_SEARCH` while the German keyword arm + catalog rows stay in Cloud SQL — so GCP
   is **still fully hybrid**, same as local/AWS. The swap is one config value (`RETRIEVER_BACKEND`)
   behind the `VectorIndex` seam ([ADR 0007](docs/decisions/0007-bigquery-retrieval-backend.md)).
+
+### Hardening (out of scope for this demo)
+
+The deployed endpoints are a public demo, not a hardened production service. Before real traffic,
+the known next steps are:
+
+- **Authentication** — gate the endpoint behind IAP / an IAM-restricted invoker (Cloud Run) or an
+  authenticated edge (AWS), instead of `allUsers` / `0.0.0.0/0`.
+- **Rate-limiting / request budget** — a per-caller request cap to bound LLM spend.
+- **Abuse protection** — WAF / bot filtering ahead of the service.
+
+The in-app input-length cap (oversized bodies are rejected before any model call) is the one
+first-line guard that already exists.
 
 ---
 

@@ -45,7 +45,7 @@ embed: ## Compute embeddings for products (run after seed; idempotent)
 eval: ## A/B-evaluate the filter × ranker strategies (nDCG/Recall/MRR; run after embed)
 	$(EXEC_API) python -m data.eval
 
-demo: ## Run the 5-query demo against the live assistant (needs an LLM key; run after embed)
+demo: ## Run the per-intent demo against the live assistant (needs an LLM key; run after embed)
 	$(EXEC_API) python /demo/run_demo.py
 
 perf: ## Load-test the assistant: latency p50/p95/p99 + cost per 1000 (needs an LLM key)

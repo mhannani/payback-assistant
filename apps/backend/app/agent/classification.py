@@ -77,3 +77,10 @@ class Classification(BaseModel):
             "Keep it in the original language."
         )
     )
+    message: str | None = Field(
+        description=(
+            "A short, helpful one-line reply in the user's language (German uses the formal Sie). "
+            "Write it for a 'comparison' query — frame the value comparison, e.g. 'Hier die Optionen "
+            "nach Preis pro Menge, günstigste zuerst.' Otherwise null."
+        ),
+    )

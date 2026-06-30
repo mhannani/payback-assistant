@@ -41,6 +41,7 @@ class _AlwaysVagueChain:
             sort=Sort.RELEVANCE,
             require_tags=[],
             search_query="snacks",
+            message=None,
         )
 
 
