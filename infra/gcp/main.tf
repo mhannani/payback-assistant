@@ -20,6 +20,9 @@ locals {
     "artifactregistry.googleapis.com",
     "secretmanager.googleapis.com",
     "bigquery.googleapis.com",
+    # Vertex AI — the seed job's embed step calls it for embeddings (and the agent, if LLM_MODEL is
+    # vertex_ai/*). Without this the embed step fails: "Aiplatform API has not been used … or disabled".
+    "aiplatform.googleapis.com",
   ]
 
   # The env var name the provider's key is exposed as, derived from llm_model's provider prefix so
