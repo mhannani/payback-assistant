@@ -37,7 +37,7 @@ locals {
   # (var.image) — uniform with AWS — and AR fetches+caches the upstream on first pull. If an
   # explicit AR image is passed (all-GCP supply chain), it's used as-is.
   ghcr_remote_host = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.ghcr_remote.repository_id}"
-  container_image = startswith(var.image, "ghcr.io/") ? replace(var.image, "ghcr.io", local.ghcr_remote_host) : var.image
+  container_image  = startswith(var.image, "ghcr.io/") ? replace(var.image, "ghcr.io", local.ghcr_remote_host) : var.image
 }
 
 resource "google_project_service" "enabled" {
