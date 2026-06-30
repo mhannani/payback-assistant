@@ -14,6 +14,7 @@ from app.agent.runner import UnknownThreadError, resume_assist, start_assist
 from app.config import get_settings
 from app.db.session import get_session
 from app.retrieval.base import Retriever
+from app.retrieval.base import backend_capabilities
 from app.retrieval.factory import get_cached_retriever
 from app.retrieval.types import Sort
 from app.schemas import AssistResponse, ProductOut
@@ -108,6 +109,9 @@ def config() -> dict[str, object]:
         "agent": {"llm_model": s.llm_model},
         "retrieval": {
             "backend": s.retriever_backend,
+            # The arms this backend runs — pgvector is hybrid (vector+fulltext); a warehouse
+            # backend may be vector-only. Surfaced so the difference is visible, not hidden.
+            "capabilities": sorted(c.value for c in backend_capabilities(s.retriever_backend)),
             "filter_strategy": s.filter_strategy,
             "filter_ceiling": s.filter_ceiling,
             "ranking_strategy": s.ranking_strategy,
@@ -122,16 +126,15 @@ async def search(
     partner: PartnerSlug | None = Query(None, description="Restrict to one partner."),
     sort: Sort = Query(Sort.RELEVANCE, description="Ordering among the relevant results."),
     require_tags: list[str] | None = Query(None, description="Keep only products with these tags."),
-    session: AsyncSession = Depends(get_session),
 ) -> list[ProductOut]:
     """Search/recommend products across the partner catalogs.
 
     These are the explicit, mechanical capabilities the intent agent maps a natural-language
     query onto — filter to a partner, require tags, choose an ordering. The endpoint itself
-    does not interpret intent.
+    does not interpret intent. The retriever owns its own data access, so no session is passed.
     """
     hits = await _retriever().search(
-        session, q, top_k=top_k, partner=partner, sort=sort, require_tags=require_tags
+        q, top_k=top_k, partner=partner, sort=sort, require_tags=require_tags
     )
     return [ProductOut.from_hit(h) for h in hits]
 
@@ -152,7 +155,6 @@ class ResumeRequest(BaseModel):
 @app.post("/assist", tags=["assist"])
 async def assist(
     body: AssistRequest,
-    session: AsyncSession = Depends(get_session),
     agent=Depends(get_app_agent),
 ) -> AssistResponse:
     """Interpret a natural-language query and either recommend products or ask a question.
@@ -161,18 +163,17 @@ async def assist(
     route to a partner), and returns a structured response. ``/search`` remains the mechanical
     primitive the agent drives; this endpoint is where intent is interpreted.
     """
-    return await start_assist(agent, body.query, session)
+    return await start_assist(agent, body.query)
 
 
 @app.post("/assist/resume", tags=["assist"])
 async def assist_resume(
     body: ResumeRequest,
-    session: AsyncSession = Depends(get_session),
     agent=Depends(get_app_agent),
 ) -> AssistResponse:
     """Continue a conversation that paused to ask a clarifying question."""
     try:
-        return await resume_assist(agent, body.thread_id, body.answer, session)
+        return await resume_assist(agent, body.thread_id, body.answer)
     except UnknownThreadError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

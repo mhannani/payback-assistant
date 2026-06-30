@@ -27,6 +27,19 @@ class Sort(StrEnum):
     PRICE_LOW = "price_low"
 
 
+class RetrievalCapability(StrEnum):
+    """A retrieval arm a backend supports. Surfaced in a retriever's ``capabilities`` so the
+    hybrid-vs-vector-only difference between backends is an explicit, inspectable part of the
+    contract (e.g. on /config) rather than a hidden behavioural surprise.
+
+    VECTOR = semantic similarity (every backend). FULLTEXT = keyword/lexical matching (Postgres
+    German full-text; BigQuery has no equivalent, so its retriever is vector-only).
+    """
+
+    VECTOR = "vector"
+    FULLTEXT = "fulltext"
+
+
 @dataclass(frozen=True, slots=True)
 class Candidate:
     """The minimal per-candidate facts ranking needs — independent of SQL/ORM.

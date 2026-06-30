@@ -25,7 +25,7 @@ they render in any Markdown viewer.
   └──────────┘                           │ canonical Product               ▼
                                          ▼                       ┌─────────────────────────┐
                               ┌──────────────────────┐           │ FastAPI  /search        │
-                              │ PostgreSQL + pgvector │◀─────────▶│ PgVectorRetriever       │
+                              │ PostgreSQL + pgvector │◀─────────▶│ HybridRetriever         │
                               │ products + 4 indexes  │  lookups  │ (embed→arms→fuse→rank)  │
                               └──────────┬───────────┘           └────────────┬────────────┘
                                          ▲                                    │
@@ -223,7 +223,7 @@ new strategy, provider, or backend is a new class, never an edit to the pipeline
   ───────────────────────        ──────────────────────────────────       ─────────────────
   Agent LLM: openai/gpt-4o-mini  any LiteLLM model (Vertex, Anthropic…)    LLM_MODEL
   Embedder : OpenAI       ◀───▶  Vertex                                    EMBEDDING_PROVIDER
-  Retriever: PgVector     ◀───▶  warehouse backend e.g. BigQuery           RETRIEVER_BACKEND
+  VectorIndex: PgVector   ◀───▶  BigQuery (GCP; lexical arm stays Postgres) RETRIEVER_BACKEND
   Filter   : absolute     ◀───▶  autocut · relative · none                 FILTER_STRATEGY
   Ranker   : constrained  ◀───▶  mmr · zscore                              RANKING_STRATEGY
 ```

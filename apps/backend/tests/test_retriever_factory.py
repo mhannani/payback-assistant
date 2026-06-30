@@ -7,28 +7,53 @@ import pytest
 from app.config import Settings
 from app.retrieval.factory import get_retriever
 from app.retrieval.filtering.autocut import AutoCutFilter
-from app.retrieval.pgvector import PgVectorRetriever
+from app.retrieval.hybrid import HybridRetriever
 from app.retrieval.ranking.mmr import MmrRanker
+from app.retrieval.vector_index import BigQueryVectorIndex, PgVectorIndex
 
 
-def test_factory_builds_pgvector_with_configured_strategies(embedder) -> None:
+class _FakeEmbedder:
+    model_id = "openai:text-embedding-3-small"
+    dimension = 1536
+
+    def embed_query(self, text: str) -> list[float]:
+        return [0.1] * self.dimension
+
+
+def test_factory_builds_hybrid_with_pgvector_index() -> None:
     settings = Settings(filter_strategy="autocut", ranking_strategy="mmr")
-    retriever = get_retriever(embedder=embedder, settings=settings)
-    assert isinstance(retriever, PgVectorRetriever)
+    retriever = get_retriever(embedder=_FakeEmbedder(), settings=settings)
+    assert isinstance(retriever, HybridRetriever)
+    assert isinstance(retriever._vector_index, PgVectorIndex)
     # The configured strategies were wired in (not the defaults).
     assert isinstance(retriever._ranker, MmrRanker)
     assert isinstance(retriever._filter, AutoCutFilter)
 
 
-def test_factory_threads_retrieval_tuning(embedder) -> None:
+def test_factory_builds_hybrid_with_bigquery_index() -> None:
+    settings = Settings(retriever_backend="bigquery", vertex_project="proj")
+    retriever = get_retriever(embedder=_FakeEmbedder(), settings=settings)
+    assert isinstance(retriever, HybridRetriever)
+    assert isinstance(retriever._vector_index, BigQueryVectorIndex)  # GCP: BQ semantic + PG lexical
+
+
+def test_factory_bigquery_requires_project() -> None:
+    with pytest.raises(ValueError, match="VERTEX_PROJECT"):
+        get_retriever(
+            embedder=_FakeEmbedder(),
+            settings=Settings(retriever_backend="bigquery", vertex_project=None),
+        )
+
+
+def test_factory_threads_retrieval_tuning() -> None:
     # filter_ceiling reaches the absolute filter; fulltext_min_rank reaches the retriever.
     settings = Settings(filter_ceiling=0.42, fulltext_min_rank=0.05)
-    retriever = get_retriever(embedder=embedder, settings=settings)
+    retriever = get_retriever(embedder=_FakeEmbedder(), settings=settings)
     assert retriever._filter._ceiling == 0.42
     assert retriever._fulltext_min_rank == 0.05
 
 
-def test_factory_rejects_unknown_backend(embedder) -> None:
+def test_factory_rejects_unknown_backend() -> None:
     settings = Settings(retriever_backend="nope")
     with pytest.raises(ValueError, match="unknown retriever_backend"):
-        get_retriever(embedder=embedder, settings=settings)
+        get_retriever(embedder=_FakeEmbedder(), settings=settings)

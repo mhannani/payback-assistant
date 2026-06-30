@@ -27,6 +27,10 @@ dependencies = [
     # their SDK, so only the configured one initializes a client.
     "google-cloud-aiplatform>=1.130.0",
     "openai>=2.9.0",
+    # BigQuery vector store (RETRIEVER_BACKEND=bigquery). A direct dependency — the BigQuery
+    # retriever lazy-imports it, but depending on it explicitly (not transitively via aiplatform)
+    # keeps the import safe if that chain ever changes.
+    "google-cloud-bigquery>=3.42,<4",
 ]
 
 [dependency-groups]

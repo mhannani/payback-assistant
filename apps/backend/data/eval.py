@@ -83,14 +83,14 @@ async def build_run(spec: dict, embedder, *, filter_strategy: str, ranking_strat
     retriever = get_retriever(embedder=embedder, settings=settings)
     k = spec["k"]
     run = Run(name=f"{filter_strategy}+{ranking_strategy}")
-    async with SessionFactory() as session:
-        for q in spec["queries"]:
-            hits = await retriever.search(session, q["query"], top_k=k)
-            # ranx scores on rank order; a descending score per position encodes it.
-            doc_ids = [str(h.product_id) for h in hits]
-            scores = [1.0 / (rank + 1) for rank in range(len(doc_ids))]
-            if doc_ids:
-                run.add(q_id=q["id"], doc_ids=doc_ids, scores=scores)
+    for q in spec["queries"]:
+        # The retriever owns its own session, so the harness just hands it the query.
+        hits = await retriever.search(q["query"], top_k=k)
+        # ranx scores on rank order; a descending score per position encodes it.
+        doc_ids = [str(h.product_id) for h in hits]
+        scores = [1.0 / (rank + 1) for rank in range(len(doc_ids))]
+        if doc_ids:
+            run.add(q_id=q["id"], doc_ids=doc_ids, scores=scores)
     return run
 
 
