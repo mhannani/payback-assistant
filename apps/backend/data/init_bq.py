@@ -37,15 +37,12 @@ def init_bq() -> None:
         )
         """
     ).result()
-    # IVF + cosine — the warehouse-scale ANN index VECTOR_SEARCH uses (counterpart of HNSW on pgvector).
-    client.query(
-        f"""
-        CREATE VECTOR INDEX IF NOT EXISTS payback_products_idx
-        ON `{table}`(embedding)
-        OPTIONS (index_type = 'IVF', distance_type = 'COSINE')
-        """
-    ).result()
-    print(f"Initialized BigQuery vector table {table} ({dim}-d) + index.")
+    # NOTE: the CREATE VECTOR INDEX lives in the embedding sink (data/sinks.py), NOT here. BigQuery
+    # derives the vector's dimension by reading the column's arrays, so it rejects an index on an
+    # all-NULL `embedding` column ("Failed to calculate array_min_len … all NULLs"). At init time the
+    # table is empty, so the index can only be built *after* embeddings are written — the sink creates
+    # it once the vectors land.
+    print(f"Initialized BigQuery vector table {table} ({dim}-d).")
 
 
 if __name__ == "__main__":

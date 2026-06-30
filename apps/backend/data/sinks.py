@@ -102,6 +102,25 @@ class BigQueryEmbeddingSink(EmbeddingSink):
               VALUES (S.product_id, S.partner, S.tags, S.embedding, S.embedding_model)
             """
         ).result()
+        self._ensure_vector_index(client, target)
+
+    def _ensure_vector_index(self, client, target: str) -> None:
+        """Build the ANN vector index — AFTER vectors are written, never before.
+
+        BigQuery derives the index's vector dimension by reading the column's arrays, so a
+        ``CREATE VECTOR INDEX`` on an all-NULL ``embedding`` column fails ("Failed to calculate
+        array_min_len … all NULLs"). The table is empty at init time, so the index can only be built
+        once embeddings land — which is here, right after the MERGE. IVF + cosine is the warehouse
+        ANN index ``VECTOR_SEARCH`` uses (the BigQuery counterpart of pgvector's HNSW); ``IF NOT
+        EXISTS`` keeps the re-run idempotent.
+        """
+        client.query(
+            f"""
+            CREATE VECTOR INDEX IF NOT EXISTS payback_products_idx
+            ON `{target}`(embedding)
+            OPTIONS (index_type = 'IVF', distance_type = 'COSINE')
+            """
+        ).result()
 
 
 def get_embedding_sink(session, settings: Settings | None = None) -> EmbeddingSink:
