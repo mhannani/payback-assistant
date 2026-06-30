@@ -59,9 +59,10 @@ resource "google_sql_database_instance" "postgres" {
     tier = var.db_tier
 
     # pgvector ships as an available extension on Cloud SQL Postgres; the app's init SQL runs
-    # `CREATE EXTENSION vector`. No flag is needed to allow it, but we keep the DB private.
+    # `CREATE EXTENSION vector`. The app reaches Cloud SQL over the Cloud Run socket, so no public
+    # IP is needed — keep the DB private.
     ip_configuration {
-      ipv4_enabled = true
+      ipv4_enabled = false
     }
   }
 
@@ -112,7 +113,11 @@ resource "google_secret_manager_secret" "llm" {
   depends_on = [google_project_service.enabled]
 }
 
+# The secret version, the IAM grant, and the runtime env that reads it exist only when a key is
+# given. The default all-Vertex path uses ADC (no key), and Secret Manager rejects an empty value —
+# so on that path these are skipped rather than failing the apply.
 resource "google_secret_manager_secret_version" "llm" {
+  count       = var.llm_api_key != "" ? 1 : 0
   secret      = google_secret_manager_secret.llm.id
   secret_data = var.llm_api_key
 }
@@ -123,8 +128,9 @@ resource "google_service_account" "run" {
   display_name = "PAYBACK Assistant Cloud Run runtime"
 }
 
-# Read the OpenAI secret.
+# Read the provider key (only when one is configured).
 resource "google_secret_manager_secret_iam_member" "run_reads_llm" {
+  count     = var.llm_api_key != "" ? 1 : 0
   secret_id = google_secret_manager_secret.llm.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.run.email}"
@@ -176,14 +182,17 @@ resource "google_cloud_run_v2_service" "api" {
         value = "postgresql+asyncpg://${google_sql_user.app.name}:${random_password.db.result}@/${google_sql_database.app.name}?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
       }
 
-      # The provider key comes from Secret Manager (under the provider's env var name), not the
-      # image or plain env. Unused when the LLM is on Vertex (ADC) — harmless if llm_api_key empty.
-      env {
-        name = local.llm_api_key_env
-        value_source {
-          secret_key_ref {
-            secret  = google_secret_manager_secret.llm.secret_id
-            version = "latest"
+      # The provider key comes from Secret Manager (under the provider's env var name), injected
+      # only when a key is configured — the all-Vertex path authenticates via ADC and needs none.
+      dynamic "env" {
+        for_each = var.llm_api_key != "" ? [1] : []
+        content {
+          name = local.llm_api_key_env
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.llm.secret_id
+              version = "latest"
+            }
           }
         }
       }
@@ -240,12 +249,15 @@ resource "google_cloud_run_v2_job" "seed" {
           name  = "DATABASE_URL"
           value = "postgresql+asyncpg://${google_sql_user.app.name}:${random_password.db.result}@/${google_sql_database.app.name}?host=/cloudsql/${google_sql_database_instance.postgres.connection_name}"
         }
-        env {
-          name = local.llm_api_key_env
-          value_source {
-            secret_key_ref {
-              secret  = google_secret_manager_secret.llm.secret_id
-              version = "latest"
+        dynamic "env" {
+          for_each = var.llm_api_key != "" ? [1] : []
+          content {
+            name = local.llm_api_key_env
+            value_source {
+              secret_key_ref {
+                secret  = google_secret_manager_secret.llm.secret_id
+                version = "latest"
+              }
             }
           }
         }

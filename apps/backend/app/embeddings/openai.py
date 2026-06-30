@@ -8,16 +8,13 @@ from __future__ import annotations
 
 from app.config import Settings
 from app.embeddings.base import Embedder
-
-# Output dimension per OpenAI embedding model — the factory checks this against the
-# physical schema dimension, so a provider/schema mismatch fails loudly at startup.
-_MODEL_DIMS = {"text-embedding-3-small": 1536, "text-embedding-3-large": 3072}
+from app.embeddings.dims import resolved_dimension
 
 
 class OpenAIEmbedder(Embedder):
     def __init__(self, settings: Settings) -> None:
         self._model_name = settings.openai_model
-        self._dimension = _MODEL_DIMS.get(self._model_name, 1536)
+        self._dimension = resolved_dimension(settings)
         # SDK imported here (not at module top) so this module loads without `openai`
         # installed; it only matters when an OpenAI embedder is actually constructed.
         from openai import OpenAI

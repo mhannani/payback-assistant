@@ -42,3 +42,9 @@ all-GCP supply chain, push to the `image_repository` output and set `-var image=
 
 > **Vertex AI:** swapping the LLM/embeddings to Vertex is a config change (`LLM_MODEL` →
 > `vertex_ai/…`), not an infra change — LiteLLM routes to it. No Terraform edit required.
+
+> **Known gap — Cloud SQL connection:** the app builds its DB DSN from `POSTGRES_*` parts
+> (`host:port`), which is the TCP form AWS/RDS uses. Cloud SQL connects over a unix socket
+> (`/cloudsql/<conn>`), a DSN form the current builder does not yet emit, so this module is
+> `validate`/`plan`-ready but a live Cloud Run instance won't reach the database until the app
+> accepts an explicit socket `DATABASE_URL`. (AWS is live-proven; GCP is validated only.)

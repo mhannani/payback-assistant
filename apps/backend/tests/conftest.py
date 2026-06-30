@@ -8,7 +8,6 @@ at teardown, so they never pollute the seeded catalog and need no separate datab
 
 from __future__ import annotations
 
-import os
 from collections.abc import AsyncIterator, Iterator
 
 import pytest
@@ -21,13 +20,32 @@ from app.config import get_settings
 from app.embeddings import Embedder, get_embedder
 from app.main import app
 
-# Embeddings and the agent LLM are both managed cloud calls keyed by OPENAI_API_KEY. Tests that
-# touch them are skipped unless the key is present, so the suite stays green without credentials
-# (CI, a fresh clone) while giving real end-to-end coverage locally. Pure logic is covered
-# separately and always runs (test_agent_logic.py, the hermetic embedder contract tests).
-requires_openai = pytest.mark.skipif(
-    not os.environ.get("OPENAI_API_KEY"),
-    reason="needs OPENAI_API_KEY — embeddings and the agent call live OpenAI",
+# Embeddings and the agent LLM are managed cloud calls, so tests that touch them need the
+# configured provider's credential. The check is provider-agnostic: LiteLLM's validate_environment
+# knows each provider's required env vars (an API key, or Vertex's project/ADC), so the suite skips
+# (not fails) without credentials. Pure logic always runs (test_agent_logic.py, the hermetic
+# embedder contract tests).
+
+
+def _provider_credentials_present() -> bool:
+    """True when the configured embedding provider and the agent LLM can both authenticate."""
+    import litellm
+
+    s = get_settings()
+    embedding_model = (
+        f"openai/{s.openai_model}"
+        if s.embedding_provider == "openai"
+        else f"vertex_ai/{s.vertex_model}"
+    )
+    return all(
+        litellm.validate_environment(model=m)["keys_in_environment"]
+        for m in (embedding_model, s.llm_model)
+    )
+
+
+requires_provider = pytest.mark.skipif(
+    not _provider_credentials_present(),
+    reason="needs the configured provider's credential — embeddings and the agent call it live",
 )
 
 
@@ -85,11 +103,11 @@ async def api_client() -> AsyncIterator[AsyncClient]:
 def embedder() -> Iterator[Embedder]:
     """The configured (cloud) embedder for tests that compute real vectors.
 
-    Embedding is a managed cloud call, so any test using this fixture needs a key; skip cleanly
-    without one so the suite stays green in a credential-less environment.
+    Embedding is a managed cloud call, so any test using this fixture needs the configured
+    provider's credential; skip cleanly without it so the suite stays green credential-less.
     """
-    if not os.environ.get("OPENAI_API_KEY"):
-        pytest.skip("needs OPENAI_API_KEY — embedding is a live cloud call")
+    if not _provider_credentials_present():
+        pytest.skip("needs the configured provider's credential — embedding is a live cloud call")
     yield get_embedder()
 
 

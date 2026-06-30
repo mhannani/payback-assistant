@@ -31,11 +31,10 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from app.config import get_settings
 
-# Embedding dimensionality — the single declared dimension for this deployment. The same value
-# sizes the physical column (db/init.sql, filled by data.init_db) and is enforced against the
-# active embedder by the factory. A SQLAlchemy column needs a concrete size at class-definition
-# time, so it is read from settings here (set EMBEDDING_DIM to your model's dimension:
-# OpenAI text-embedding-3-small = 1536, Vertex = 768).
+# Embedding dimensionality, derived from the configured provider + model (see app/embeddings/dims).
+# The same value sizes the physical column (db/init.sql, filled by data.init_db). A SQLAlchemy
+# column needs a concrete size at class-definition time, so it is resolved here at import — cheap
+# and import-safe (a static lookup, no embedding client is built).
 EMBEDDING_DIM = get_settings().embedding_dim
 
 

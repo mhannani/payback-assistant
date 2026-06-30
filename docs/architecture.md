@@ -102,8 +102,8 @@ column, so the German full-text vector can never drift out of sync with `name`/`
   │        └── VertexEmbedder  multilingual-002 · 768-d       │
   └───────────────────────┬──────────────────────────────────┘
                           ▼
-              factory dimension guard
-              (reject at startup if ≠ configured EMBEDDING_DIM)
+              factory dimension validation
+              (reject unknown / too-wide model before any client is built)
                           │
                           ▼
               unit vector → products.embedding
@@ -222,7 +222,7 @@ new strategy, provider, or backend is a new class, never an edit to the pipeline
   Built (default)                Config-swappable / documented seam        Env var
   ───────────────────────        ──────────────────────────────────       ─────────────────
   Agent LLM: openai/gpt-4o-mini  any LiteLLM model (Vertex, Anthropic…)    LLM_MODEL
-  Embedder : Local        ◀───▶  Vertex · OpenAI                           EMBEDDING_PROVIDER
+  Embedder : OpenAI       ◀───▶  Vertex                                    EMBEDDING_PROVIDER
   Retriever: PgVector     ◀───▶  warehouse backend e.g. BigQuery           RETRIEVER_BACKEND
   Filter   : absolute     ◀───▶  autocut · relative · none                 FILTER_STRATEGY
   Ranker   : constrained  ◀───▶  mmr · zscore                              RANKING_STRATEGY

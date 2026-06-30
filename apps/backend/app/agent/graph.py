@@ -47,7 +47,7 @@ from app.agent.chains import classifier_chain
 from app.agent.classification import Classification
 from app.agent.intents import Language, NextBestAction
 from app.agent.state import AgentState, decide_action
-from app.retrieval.factory import get_retriever
+from app.retrieval.factory import get_cached_retriever
 from app.retrieval.types import Sort
 from app.shared.partner import partner_search_url
 
@@ -141,7 +141,7 @@ async def _run_search(classification: Classification, config: RunnableConfig) ->
     The request-scoped session comes from config (not state — see module docstring).
     """
     session = config["configurable"]["session"]
-    return await get_retriever().search(
+    return await get_cached_retriever().search(
         session,
         classification.search_query,
         partner=classification.partner,

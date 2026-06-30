@@ -72,7 +72,8 @@ class UsageOut(BaseModel):
     model: str
     input_tokens: int
     output_tokens: int
-    cost_usd: float
+    # null when LiteLLM has no pricing for the model — tokens are known, the dollar figure isn't.
+    cost_usd: float | None = None
 
 
 class _AssistBase(BaseModel):

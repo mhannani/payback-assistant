@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from app.config import Settings, get_settings
 from app.embeddings.base import Embedder
+from app.embeddings.dims import resolved_dimension
 from app.embeddings.openai import OpenAIEmbedder
 from app.embeddings.vertex import VertexEmbedder
 
@@ -15,11 +16,14 @@ from app.embeddings.vertex import VertexEmbedder
 def get_embedder(settings: Settings | None = None) -> Embedder:
     """Build the embedder named by ``embedding_provider`` (a managed cloud provider).
 
-    Fails loudly at construction if the provider's vector dimension doesn't match the schema's
-    declared ``embedding_dim`` — the alternative (failing later, mid-embed, or silently writing
-    mismatched vectors into the fixed-size column) is a worse, harder-to-trace failure.
+    The provider/model dimension is validated FIRST (unknown model or one too wide for the index
+    is rejected here, before any cloud SDK is constructed). The post-construction equality check is
+    a cheap consistency guard — the embedder's dimension and the schema's both derive from the same
+    table, so a mismatch would signal a table bug, not a config error.
     """
     s = settings or get_settings()
+    expected_dim = resolved_dimension(s)  # raises on unknown / too-wide model, pre-construction
+
     match s.embedding_provider:
         case "vertex":
             embedder: Embedder = VertexEmbedder(s)
@@ -28,10 +32,9 @@ def get_embedder(settings: Settings | None = None) -> Embedder:
         case other:
             raise ValueError(f"unknown embedding_provider {other!r}; expected vertex or openai")
 
-    if embedder.dimension != s.embedding_dim:
+    if embedder.dimension != expected_dim:
         raise ValueError(
-            f"provider {s.embedding_provider!r} emits {embedder.dimension}-d vectors but "
-            f"EMBEDDING_DIM is set to {s.embedding_dim}. Set EMBEDDING_DIM to {embedder.dimension} "
-            f"(it sizes the products.embedding column, applied by data.init_db) and re-provision."
+            f"internal dimension table inconsistency: {s.embedding_provider} embedder reports "
+            f"{embedder.dimension}-d but the schema expects {expected_dim}-d."
         )
     return embedder

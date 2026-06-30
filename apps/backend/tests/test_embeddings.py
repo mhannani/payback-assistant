@@ -9,8 +9,8 @@ import math
 import pytest
 
 from app.config import Settings
-from app.embeddings import Embedder, get_embedder
-from app.embeddings.openai import OpenAIEmbedder
+from app.embeddings import Embedder
+from app.embeddings.dims import resolved_dimension
 
 
 class _RawEmbedder(Embedder):
@@ -35,22 +35,20 @@ def test_embed_texts_empty_returns_empty() -> None:
     assert _RawEmbedder().embed_texts([]) == []
 
 
-def test_factory_selects_provider() -> None:
-    # OpenAI's client initializes without a network call; Vertex needs live GCP auth, so it's
-    # exercised in the deploy/seed path rather than a hermetic unit test.
-    assert isinstance(
-        get_embedder(Settings(embedding_provider="openai", embedding_dim=1536)), OpenAIEmbedder
-    )
+def test_dimension_derived_per_provider() -> None:
+    # The dimension follows from the configured provider + model — no hand-set value.
+    assert resolved_dimension(Settings(embedding_provider="openai")) == 1536
+    assert resolved_dimension(Settings(embedding_provider="vertex")) == 768
 
 
-def test_factory_unknown_provider_raises() -> None:
-    with pytest.raises(ValueError, match="unknown embedding_provider"):
-        get_embedder(Settings(embedding_provider="nonsense"))
+def test_dimension_rejects_unknown_model() -> None:
+    # A typo'd model must fail loudly, not silently size the schema with a fabricated default.
+    with pytest.raises(ValueError, match="no known embedding dimension"):
+        resolved_dimension(Settings(embedding_provider="openai", openai_model="text-embedding-9-xl"))
 
 
-def test_factory_rejects_dimension_mismatch() -> None:
-    # A provider whose vectors don't fit the declared dimension must fail at construction
-    # (loudly), not later mid-embed or by writing mismatched vectors. OpenAI emits 1536-d, so
-    # configuring a different EMBEDDING_DIM is the mismatch.
-    with pytest.raises(ValueError, match="EMBEDDING_DIM"):
-        get_embedder(Settings(embedding_provider="openai", embedding_dim=384))
+def test_dimension_rejects_model_too_wide_for_hnsw() -> None:
+    # text-embedding-3-large is 3072-d; the pgvector HNSW index caps at 2000-d, so it's rejected
+    # up front with a clear message rather than failing deep in schema creation.
+    with pytest.raises(ValueError, match="HNSW index caps"):
+        resolved_dimension(Settings(embedding_provider="openai", openai_model="text-embedding-3-large"))

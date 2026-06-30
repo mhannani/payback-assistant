@@ -38,10 +38,9 @@ CREATE TABLE IF NOT EXISTS products (
     weight_g    INTEGER,
     volume_ml   INTEGER,
     attrs       JSONB NOT NULL DEFAULT '{}'::jsonb,
-    -- Vector size is the deployment's embedding dimension. ${EMBEDDING_DIM} is substituted by
-    -- data.init_db from the configured setting (the dev Postgres container, which runs this file
-    -- verbatim, gets it via the EMBEDDING_DIM build/runtime arg). One declared dimension, no magic
-    -- number duplicated between the schema and the ORM.
+    -- Vector size is the embedding dimension, derived from the configured provider + model.
+    -- data.init_db (the single schema path for every environment) substitutes ${EMBEDDING_DIM},
+    -- so the column and the ORM never disagree on a hand-set number.
     embedding   VECTOR(${EMBEDDING_DIM}),
     -- Which embedder produced `embedding`; lets the embed step re-embed on a
     -- provider switch and lets retrieval reject a stale-model mismatch.

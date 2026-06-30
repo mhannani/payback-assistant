@@ -134,7 +134,7 @@ One `products` table backs everything: an HNSW index for semantic search, a GIN 
 
 Embeddings are provider-agnostic (`Embedder` interface) and served by a managed provider — OpenAI
 (`text-embedding-3-small`, 1536-d) by default, Vertex AI config-swappable. The vector column is sized
-to the configured model's dimension (`EMBEDDING_DIM`), applied by `data.init_db`.
+to the model's dimension, derived from the provider + model and applied by `data.init_db`.
 
 ---
 
@@ -323,7 +323,7 @@ The embedder, filter, and ranker are interfaces selected by environment variable
 | Concern | Env var | Default | Options |
 |---|---|---|---|
 | Agent LLM | `LLM_MODEL` | `openai/gpt-4o-mini` | any LiteLLM model id (`vertex_ai/…`, `anthropic/…`, …) |
-| Embedder | `EMBEDDING_PROVIDER` | `local` | `local`, `vertex`, `openai` |
+| Embedder | `EMBEDDING_PROVIDER` | `openai` | `openai`, `vertex` |
 | Vector backend | `RETRIEVER_BACKEND` | `pgvector` | `pgvector` |
 | Candidate filter | `FILTER_STRATEGY` | `absolute` | `absolute`, `autocut`, `relative`, `none` |
 | Ranker | `RANKING_STRATEGY` | `constrained` | `constrained`, `mmr`, `zscore` |
@@ -356,9 +356,12 @@ callback, priced by LiteLLM (no hand-maintained price table; see
 
 | Metric | Value (30 requests, concurrency 5) |
 |---|---|
-| Latency p50 / p95 / p99 | ~4.5 s / ~7.1 s / ~8.5 s |
+| Latency p50 / p95 | ~2–4.5 s / ~7 s |
 | LLM cost per request | ~$0.00014 |
 | **Cost per 1000 requests** | **~$0.14** |
+
+Latency tracks the single LLM classification call, so it varies run-to-run (p50 ~2–4.5 s); the cost
+is near-constant.
 
 ```bash
 make perf                              # quick run (a few cents)
@@ -383,7 +386,7 @@ apps/
       main.py            FastAPI app: /search, /health, /ready
       config.py          typed settings (env-driven)
       db/                ORM models, async session, init.sql (schema + indexes)
-      embeddings/        Embedder ABC + local / Vertex / OpenAI + factory
+      embeddings/        Embedder ABC + OpenAI / Vertex + factory
       retrieval/
         pgvector.py      hybrid retriever (semantic + keyword + fuse + rank)
         fusion.py        Reciprocal Rank Fusion

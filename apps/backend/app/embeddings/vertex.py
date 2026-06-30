@@ -12,16 +12,13 @@ from __future__ import annotations
 
 from app.config import Settings
 from app.embeddings.base import Embedder
-
-# Output dimension per Vertex embedding model — the factory checks this against the
-# physical schema dimension, so a provider/schema mismatch fails loudly at startup.
-_MODEL_DIMS = {"text-multilingual-embedding-002": 768, "text-embedding-005": 768}
+from app.embeddings.dims import resolved_dimension
 
 
 class VertexEmbedder(Embedder):
     def __init__(self, settings: Settings) -> None:
         self._model_name = settings.vertex_model
-        self._dimension = _MODEL_DIMS.get(self._model_name, 768)
+        self._dimension = resolved_dimension(settings)
         # The SDK is imported here (not at module top) so this module loads even when
         # google-cloud-aiplatform is not installed; importing it only matters when a
         # Vertex embedder is actually constructed, i.e. when Vertex is the chosen

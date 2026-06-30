@@ -26,12 +26,13 @@ Two correctness rules live in the contract, not in each impl:
 - **Normalization is owned by the base class.** Implementations return raw vectors; the base
   L2-normalizes them, so every provider matches the cosine HNSW index and none can silently
   regress search quality.
-- **The factory rejects a dimension mismatch at construction** — a provider whose vectors don't
-  match the declared `EMBEDDING_DIM` fails loudly at startup, not mid-embed.
+- **The factory validates the dimension before building any client** — an unknown model, or one
+  too wide for the pgvector HNSW index (>2000-d), is rejected up front with a clear message.
 
-**One declared dimension.** `EMBEDDING_DIM` (config) sizes the `embedding` column — applied by
-`data.init_db`, which substitutes it into `db/init.sql` — and the ORM column, with the factory
-guard enforcing it against the active provider. No dimension is hardcoded or duplicated.
+**One derived dimension.** The dimension is a pure function of the provider + model
+(`app/embeddings/dims.py`), not a separately-set value that could drift. It sizes the `embedding`
+column — applied by `data.init_db`, which substitutes it into `db/init.sql` — and the ORM column.
+No dimension is hand-set, hardcoded, or duplicated.
 
 Each product records **which model produced its vector** (`embedding_model`), so the embed step
 re-embeds when the provider changes and retrieval rejects a stale-model mismatch (vectors from
@@ -39,8 +40,8 @@ different models are not comparable).
 
 ## Why this design
 
-- **Production-aligned, no lock-in:** swapping OpenAI ↔ Vertex is a config change (+ a re-embed and
-  a matching `EMBEDDING_DIM`), guarded so it can't silently corrupt search.
+- **Production-aligned, no lock-in:** swapping OpenAI ↔ Vertex is a config change (+ a re-embed);
+  the dimension follows the model automatically, so it can't silently corrupt search.
 - **Lean image:** no model weights or torch to ship, so the production image stays small and starts
   fast — the cost is that a key/credentials are required (there is no offline fallback).
 

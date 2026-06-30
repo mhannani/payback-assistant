@@ -2,7 +2,6 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from functools import lru_cache
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
@@ -15,7 +14,7 @@ from app.agent.runner import UnknownThreadError, resume_assist, start_assist
 from app.config import get_settings
 from app.db.session import get_session
 from app.retrieval.base import Retriever
-from app.retrieval.factory import get_retriever
+from app.retrieval.factory import get_cached_retriever
 from app.retrieval.types import Sort
 from app.schemas import AssistResponse, ProductOut
 from app.shared.partner import PartnerSlug
@@ -47,10 +46,9 @@ app = FastAPI(
 )
 
 
-@lru_cache
 def _retriever() -> Retriever:
-    """The shared retriever — built once (from config) so the model loads a single time."""
-    return get_retriever()
+    """The shared, process-cached retriever (see retrieval.factory.get_cached_retriever)."""
+    return get_cached_retriever()
 
 
 @app.get("/", tags=["ops"])

@@ -1,18 +1,18 @@
 """End-to-end tests for the intent-agent endpoints (/assist, /assist/resume).
 
 These exercise the real agent — LLM classification, the graph, the retriever, and the durable
-checkpointer — so they are gated on an OpenAI key (``requires_openai``) and skipped without one.
-The agent's deterministic logic (intent→action policy, deep-link building) is covered
-hermetically in test_agent_logic.py and always runs.
+checkpointer — so they are gated on the configured provider's credential (``requires_provider``)
+and skipped without it. The agent's deterministic logic (intent→action policy, deep-link building)
+is covered hermetically in test_agent_logic.py and always runs.
 """
 
 from __future__ import annotations
 
 import pytest
 
-from tests.conftest import requires_openai
+from tests.conftest import requires_provider
 
-pytestmark = requires_openai
+pytestmark = requires_provider
 
 
 async def test_specific_query_returns_products(agent_client) -> None:

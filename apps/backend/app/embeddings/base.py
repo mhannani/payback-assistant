@@ -19,7 +19,7 @@ class Embedder(ABC):
     Concrete impls only implement ``_embed_raw``; the base then L2-normalizes the
     result. Normalization lives here (not per impl) because the catalog's HNSW index
     uses cosine distance, which assumes unit vectors — owning it in the contract means
-    no provider (local, Vertex, OpenAI, or a future one) can forget and silently
+    no provider (OpenAI, Vertex, or a future one) can forget and silently
     degrade search quality.
     """
 

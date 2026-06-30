@@ -25,11 +25,6 @@ class Settings(BaseSettings):
     # Which managed provider serves vectors: 'openai' (default) or 'vertex'. Embedding is a
     # cloud call, so a key/credentials are required (no offline model).
     embedding_provider: str = "openai"
-    # Vector dimension of the products.embedding column — one declared dimension for the
-    # deployment. Must match the active embedder's model (OpenAI text-embedding-3-small = 1536,
-    # Vertex text-multilingual-embedding-002 = 768). It sizes the schema column (db/init.sql,
-    # applied by data.init_db) and the ORM column; the factory rejects a mismatching provider.
-    embedding_dim: int = 1536
     # Provider settings — only read by the matching provider.
     vertex_project: str | None = None
     vertex_location: str = "europe-west3"
@@ -61,6 +56,17 @@ class Settings(BaseSettings):
     # 'vertex_ai/gemini-2.0-flash', 'anthropic/claude-...', etc. is a one-line change.
     llm_model: str = "openai/gpt-4o-mini"
     llm_temperature: float = 0.0  # classification is deterministic, not creative
+
+    @property
+    def embedding_dim(self) -> int:
+        """The vector dimension, derived from the configured provider + model (one source of truth).
+
+        Sizes the schema column (db/init.sql via data.init_db) and the ORM column. Imported lazily
+        to avoid a config→embeddings import cycle at module load.
+        """
+        from app.embeddings.dims import resolved_dimension
+
+        return resolved_dimension(self)
 
     @property
     def database_url(self) -> str:
