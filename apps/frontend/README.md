@@ -1,22 +1,13 @@
 # Frontend (additional, on a separate branch)
 
-The `main` branch deliberately scopes to the **backend core** — the microservice,
-recommendation engine, intent agent, and deployment that make up the required
-deliverables. This keeps `main` focused and easy to evaluate on its own.
+`main` scopes to the **backend core** — the microservice, recommendation engine, intent agent, and
+deployment that make up the required deliverables — so it is evaluated on its own. The web UI is an
+additional layer on the `feat/showcase-widget` branch, a thin client over the stable JSON API.
 
-A web UI for the assistant is an **additional layer**, developed on a separate
-branch rather than `main`, so the core scope stays clean and the UI can evolve
-independently against the stable API.
+## What it provides
 
-## What it will provide
-
-- A chat interface over the assistant API (`POST /assist` + `/assist/resume`).
-- Rendering of the structured response: recommended products as cards
-  (name, partner, price, and **product image**) or the clarifying question.
+- A chat widget over the assistant API (`POST /assist` + `/assist/resume`).
+- Rendering of the structured response: products as cards (name, partner, price, image), a
+  price-per-unit comparison table, a partner hand-off, or a clarifying question.
 - The multi-turn clarify flow, driven by the agent's pause/resume.
-
-## Why a separate branch
-
-The backend returns a structured JSON contract, so the UI is a thin client on
-top of it. Separating it means the backend can be evaluated and run on its own
-(`make up`), while the UI is layered on top without expanding the core's scope.
+- Voice dictation (Deepgram) with German + English support.

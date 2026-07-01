@@ -75,7 +75,7 @@ required.
 
 `/search` is a retrieval primitive: it does not parse intent from the query (it won't read "cheap" from
 *günstige*). Intent classification and the clarifying-question branch live in the **intent agent** (Task 2,
-`/assist`), which calls `/search`. Keeping that boundary explicit is what lets retrieval be tested on its own.
+`/assist`), which calls `/search` — so retrieval is exercised and tested on its own.
 
 ---
 
@@ -175,7 +175,7 @@ the result.
   │         │              │                  │  (German stemming)         │
   │         ▼              │                  │         │                  │
   │  CandidateFilter       │                  │         ▼                  │
-  │  absolute ceiling 0.50 │                  │  ts_rank ≥ min_rank floor  │
+  │  absolute ceiling 0.60 │                  │  ts_rank ≥ min_rank floor  │
   │  (pre-fusion noise cut)│                  │                            │
   └───────────┬────────────┘                  └─────────────┬──────────────┘
               │  ranked id list                            │  ranked id list
@@ -448,10 +448,10 @@ python perf/run_perf.py --base-url http://<alb-dns>          # AWS  (gpt-4o-mini
 
 Cost per turn is near-constant, so cost-per-1000 scales linearly from a small sample (the run labels
 whether it is measured or extrapolated). **Latency is dominated by the single LLM call per turn** —
-classification is one structured call; retrieval is sub-millisecond index lookups. So the levers for
-faster, cheaper responses are model choice, prompt size, and caching, not the application code. With
-`gpt-4o-mini` the prompt is ~700 input tokens (the field-described `Classification` schema) and ~40
-output, which is why cost stays a fraction of a cent.
+classification is one structured call; retrieval is sub-millisecond index lookups. The performance
+levers are therefore model choice, prompt size, and caching, not application code. With `gpt-4o-mini`
+the prompt is ~700 input tokens (the field-described `Classification` schema) and ~40 output — hence
+the fraction-of-a-cent cost.
 
 ---
 
@@ -480,7 +480,7 @@ apps/
       eval.py            A/B evaluation harness (make eval)
     tests/               unit + DB-backed + agent tests
   frontend/              optional chat UI (future)
-demo/                    5-query demo client (make demo)
+demo/                    per-intent demo client (make demo)
 perf/                    load-test client: latency + cost/1000 (make perf)
 infra/
   gcp/                   Terraform: Cloud Run + Cloud SQL/pgvector + BigQuery + AR + Secret Mgr
@@ -529,9 +529,8 @@ by a managed provider (OpenAI / Vertex), keeping the image small and cold starts
 **Container on a host.** `docker compose` or a single container on any server — the simplest path and
 how the live demo runs.
 
-The cloud-deployed endpoints are **unauthenticated by design** (Cloud Run `allUsers`, ALB open to
-`0.0.0.0/0`) so a reviewer can `curl` them directly without credentials. That is a deliberate
-demo trade-off, not production posture — see **Hardening** below.
+The cloud-deployed endpoints are **unauthenticated** (Cloud Run `allUsers`, ALB open to `0.0.0.0/0`)
+so they can be `curl`ed directly — a demo configuration, not production posture. See **Hardening** below.
 
 **Cloud-native, as Terraform.** Two parallel modules provision the same architecture on either cloud
 (both `terraform validate` clean):
@@ -573,8 +572,7 @@ first-line guard that already exists.
 ## Limitations
 
 - **A key is required.** Embeddings and the agent are managed-provider calls, so the service needs an
-  OpenAI (or Vertex) key — there is no offline fallback. This is the production-realistic choice (no
-  in-process model to serve or scale).
+  OpenAI (or Vertex) key — there is no offline fallback and no in-process model in the image.
 - **Small catalog** (~145 products). Enough to show the cross-catalog behaviour; the filter ceiling is
   calibrated on a small labelled set for the active embedding model and should be re-derived
   (`make eval`) for a larger corpus or a different provider.

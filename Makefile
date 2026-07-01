@@ -45,11 +45,16 @@ embed: ## Compute embeddings for products (run after seed; idempotent)
 eval: ## A/B-evaluate the filter × ranker strategies (nDCG/Recall/MRR; run after embed)
 	$(EXEC_API) python -m data.eval
 
-demo: ## Run the per-intent demo against the live assistant (needs an LLM key; run after embed)
-	$(EXEC_API) python /demo/run_demo.py
+# Optional: point demo/perf at a deployed instance instead of the local stack, e.g.
+#   make demo BASE_URL=https://<cloud-run-url>   ·   make perf BASE_URL=http://<alb-dns>
+BASE_URL ?=
+_BASE_URL_ARG = $(if $(BASE_URL),--base-url $(BASE_URL),)
 
-perf: ## Load-test the assistant: latency p50/p95/p99 + cost per 1000 (needs an LLM key)
-	$(EXEC_API) python /perf/run_perf.py
+demo: ## Run the per-intent demo (local, or a deployed URL via BASE_URL=…; needs an LLM key)
+	$(EXEC_API) python /demo/run_demo.py $(_BASE_URL_ARG)
+
+perf: ## Load-test: p50/p95/p99 + cost per 1000 (local, or a deployed URL via BASE_URL=…; needs an LLM key)
+	$(EXEC_API) python /perf/run_perf.py $(_BASE_URL_ARG)
 
 test: ## Run the test suite
 	$(EXEC_API) python -m pytest

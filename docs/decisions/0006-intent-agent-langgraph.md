@@ -40,7 +40,7 @@ bespoke session and loop plumbing.
 ### The LLM gateway (provider-agnostic)
 
 The model is reached through **`ChatLiteLLM`** (`app/llm/`), so the provider is a one-line config
-change (`llm_model`, e.g. `openai/gpt-4o-mini` → `vertex_ai/gemini-2.0-flash`) with credentials
+change (`llm_model`, e.g. `openai/gpt-4o-mini` → `vertex_ai/gemini-2.5-flash`) with credentials
 read from the environment. `with_structured_output` constrains the model to the `Classification`
 schema — typed, validated output, no string parsing. (OpenAI strict mode requires every field in
 `required`, so "optional" fields are modelled as required-but-nullable.)
