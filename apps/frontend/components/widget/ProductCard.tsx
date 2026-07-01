@@ -1,16 +1,24 @@
-import { ArrowUpRightIcon, StorefrontIcon } from "@phosphor-icons/react";
+"use client";
+
+import { useState } from "react";
+import { ArrowUpRightIcon, CaretDownIcon, StorefrontIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { ProductOut } from "@/lib/types";
+
+/** How many results the list shows before the "show more" toggle reveals the rest. */
+const PRODUCTS_PREVIEW_COUNT = 3;
 
 /** Format integer cents as a localized price (German locale — the catalog is EUR). */
 function formatPrice(cents: number, currency: string): string {
   return new Intl.NumberFormat("de-DE", { style: "currency", currency }).format(cents / 100);
 }
 
-/** One product result — image, name, brand, partner, price, tags. The Empfio card look, recolored. */
+/** One product result — image, name, brand, partner, price, tags. Rendered as a ROW inside the
+ * single ProductList container (a bottom divider separates rows; the last row's is removed there),
+ * so a result set reads as one entity rather than a stack of separate cards. */
 export function ProductCard({ product }: { product: ProductOut }) {
   return (
-    <div className="flex gap-3 rounded-xl border border-border bg-card p-3 transition-shadow hover:shadow-md">
+    <div className="flex gap-3 border-b border-border p-3 transition-colors last:border-0 hover:bg-muted/40">
       <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
         {product.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element -- external partner CDN, not optimized
@@ -54,13 +62,36 @@ export function ProductCard({ product }: { product: ProductOut }) {
   );
 }
 
-/** A list of product cards plus a trailing "find more" affordance is rendered by the bubble. */
+/** The result set as ONE entity: a single bordered container with products as divided rows. Shows
+ * the first few and, when there are more, a "Mehr anzeigen" toggle that reveals the rest in place
+ * (kept inline so the embedded widget needs no host page or extra navigation). */
 export function ProductList({ items }: { items: ProductOut[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasMore = items.length > PRODUCTS_PREVIEW_COUNT;
+  const shown = expanded ? items : items.slice(0, PRODUCTS_PREVIEW_COUNT);
+
   return (
-    <div className="flex flex-col gap-2">
-      {items.map((p) => (
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      {shown.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}
+
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className={cn(
+            "flex w-full items-center justify-center gap-1 border-t border-border bg-muted/30 py-2",
+            "text-xs font-medium text-primary transition-colors hover:bg-muted/60",
+          )}
+        >
+          {expanded ? "Weniger anzeigen" : `${items.length - PRODUCTS_PREVIEW_COUNT} weitere anzeigen`}
+          <CaretDownIcon
+            className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")}
+            weight="bold"
+          />
+        </button>
+      )}
     </div>
   );
 }
