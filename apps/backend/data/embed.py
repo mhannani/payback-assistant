@@ -20,6 +20,7 @@ from __future__ import annotations
 import asyncio
 
 from sqlalchemy import or_, select
+from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
 from app.db.models import Product
@@ -40,7 +41,11 @@ async def _products_to_embed(session, embedder: Embedder, *, all_rows: bool) -> 
     stored provenance. For BigQuery there is no per-row provenance in Postgres, so we (re)embed all
     rows and let the sink's MERGE keep one live vector per product.
     """
-    stmt = select(Product)
+    # Eager-load `partner`: the BigQuery sink reads `product.partner.slug` while building its rows,
+    # outside this session's await context — a lazy load there fails with MissingGreenlet. Same
+    # reason and pattern as app/retrieval/_rows.py:load_candidates. (The Postgres sink only writes
+    # columns, so it never tripped this; only the BigQuery/all_rows path does.)
+    stmt = select(Product).options(selectinload(Product.partner))
     if not all_rows:
         stmt = stmt.where(
             or_(
