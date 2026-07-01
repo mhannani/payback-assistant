@@ -433,9 +433,18 @@ Latency tracks the single LLM classification call, so it varies run-to-run (p50 
 is near-constant.
 
 ```bash
-make perf                              # quick run (a few cents)
+make perf                              # quick run against localhost (a few cents)
 python perf/run_perf.py -n 1000 -c 20  # the literal 1000-request run
+
+# Point it at a live deployment instead of localhost (the Cloud Run / ALB URL Terraform prints):
+python perf/run_perf.py --base-url https://<cloud-run-url>   # GCP  (Gemini · BigQuery)
+python perf/run_perf.py --base-url http://<alb-dns>          # AWS  (gpt-4o-mini · pgvector)
 ```
+
+The two deployments use different models and vector stores (AWS: `gpt-4o-mini` + pgvector; GCP:
+`gemini-2.5-flash` + BigQuery `VECTOR_SEARCH`), so their latency/cost differ by *model and vector-store
+architecture*, not raw infrastructure — worth keeping in mind before reading one as "faster than" the
+other.
 
 Cost per turn is near-constant, so cost-per-1000 scales linearly from a small sample (the run labels
 whether it is measured or extrapolated). **Latency is dominated by the single LLM call per turn** —
