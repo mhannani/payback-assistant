@@ -1,9 +1,8 @@
 import Link from "next/link";
-import Script from "next/script";
 import { PaybackLogo } from "@/components/PaybackLogo";
 
-/** Die Demo-Startseite. Die schwebende Chat-Blase (von /widget.js geladen) ist der Kern; diese Seite
- * gibt ihr ein Zuhause und verlinkt auf den Produktkatalog. */
+/** Die Demo-Startseite. Die schwebende Chat-Blase (aus /widget.js, im App-Shell geladen) ist der
+ * Kern; diese Seite gibt ihr ein Zuhause und verlinkt auf den Produktkatalog. */
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
@@ -29,9 +28,6 @@ export default function Home() {
           Tippen Sie auf die Chat-Blase, um zu starten →
         </p>
       </div>
-
-      {/* Das einbettbare Widget — dasselbe Skript, das ein Partner auf seiner Seite einbinden würde. */}
-      <Script src="/widget.js" strategy="afterInteractive" />
     </main>
   );
 }

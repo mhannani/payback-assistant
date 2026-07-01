@@ -37,7 +37,7 @@
     var container = document.createElement("div");
     container.id = "payback-widget-container";
     container.style.cssText =
-      "position:fixed;bottom:20px;right:20px;z-index:2147483000;display:flex;flex-direction:column;align-items:flex-end;gap:12px";
+      "position:fixed;bottom:88px;right:24px;z-index:2147483000;display:flex;flex-direction:column;align-items:flex-end;gap:12px";
 
     // Caret-down icon shown on the bubble while the panel is open (Empfio's open-state affordance).
     var ICON_CARET =
@@ -98,8 +98,12 @@
       return window.innerWidth < 480;
     }
     function applyMobileLayout() {
+      // Fullscreen on mobile. Use 100dvh (dynamic viewport height), NOT 100vh: on mobile browsers
+      // 100vh is the *large* viewport that sits behind the address/toolbar, so the panel overflows
+      // and its bottom — the input box — gets buried under the browser chrome. 100dvh tracks the
+      // actually-visible area, keeping the prompt on screen.
       iframeWrap.style.cssText +=
-        ";position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;border-radius:0";
+        ";position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100dvh;border-radius:0";
     }
     function applyDesktopLayout() {
       iframeWrap.style.position = "relative";
