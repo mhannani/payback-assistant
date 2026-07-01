@@ -423,14 +423,19 @@ response carries the turn's LLM cost in its `usage` block — token counts from 
 callback, priced by LiteLLM (no hand-maintained price table; see
 [`app/llm/cost.py`](apps/backend/app/llm/cost.py)) — so the client sums real figures.
 
-| Metric | Value (30 requests, concurrency 5) |
-|---|---|
-| Latency p50 / p95 / p99 | 1560 ms / 3519 ms / 3526 ms |
-| LLM cost per request | ~$0.000180 |
-| **Cost per 1000 requests** | **~$0.18** |
+Measured against both live deployments (30 requests, concurrency 5):
 
-Latency tracks the single LLM classification call, so it varies run-to-run (p50 ~1.6 s); the cost
-is near-constant.
+| Metric | AWS — `gpt-4o-mini` · pgvector | GCP — `gemini-2.5-flash` · BigQuery |
+|---|---|---|
+| Latency p50 | 1450 ms | 2476 ms |
+| Latency p95 | 1896 ms | 9847 ms |
+| Latency p99 | 2443 ms | 9992 ms |
+| **Cost per 1000 requests** | **~$0.18** | **~$0.66** |
+
+These differ by **model and vector-store architecture, not raw infrastructure**, so neither is simply
+"faster": AWS runs a smaller LLM plus an in-process pgvector index tuned for latency, while GCP runs a
+larger model plus BigQuery `VECTOR_SEARCH` — a warehouse query built for scale, with higher (and
+longer-tailed, hence the p95/p99 gap) per-query latency. Cost tracks LLM token pricing, not the cloud.
 
 ```bash
 make perf                              # quick run against localhost (a few cents)
@@ -440,11 +445,6 @@ python perf/run_perf.py -n 1000 -c 20  # the literal 1000-request run
 python perf/run_perf.py --base-url https://<cloud-run-url>   # GCP  (Gemini · BigQuery)
 python perf/run_perf.py --base-url http://<alb-dns>          # AWS  (gpt-4o-mini · pgvector)
 ```
-
-The two deployments use different models and vector stores (AWS: `gpt-4o-mini` + pgvector; GCP:
-`gemini-2.5-flash` + BigQuery `VECTOR_SEARCH`), so their latency/cost differ by *model and vector-store
-architecture*, not raw infrastructure — worth keeping in mind before reading one as "faster than" the
-other.
 
 Cost per turn is near-constant, so cost-per-1000 scales linearly from a small sample (the run labels
 whether it is measured or extrapolated). **Latency is dominated by the single LLM call per turn** —
