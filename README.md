@@ -12,7 +12,17 @@ It is built in three layers, each independently testable:
 3. **Cloud-native deployment** — one lean image, provisioned on GCP (Cloud Run) or AWS (ECS) by parallel
    Terraform modules.
 
+## Prerequisites (local)
+
+- **Docker**, **Docker Compose**, and **make** — every command runs inside the containers (no other host toolchain).
+- **An embedding/LLM key** — embeddings and the agent are managed-provider calls. Copy `.env.example` to
+  `.env.dev` and set `OPENAI_API_KEY` (or switch `EMBEDDING_PROVIDER=vertex` and use Vertex AI via ADC).
+
+Deploying to a cloud needs more (Terraform + the cloud CLI + credentials) — see
+[Deployment](#deployment) and each module's README.
+
 ```bash
+cp .env.example .env.dev                                # then set OPENAI_API_KEY
 make up && make seed && make embed                      # start · load catalogs · embed
 curl 'localhost:8000/search?q=pasta%20dinner&top_k=3'   # → German products for an English query
 ```
@@ -41,9 +51,7 @@ returns German products from two different partners:
 ]
 ```
 
-(`id`, `description`, and `image_url` are also returned; trimmed here.) Everything runs on a local
-Docker stack; embeddings and the agent are managed-provider calls, so an OpenAI (or Vertex) key is
-required.
+(`id`, `description`, and `image_url` are also returned; trimmed here.)
 
 ---
 
@@ -73,9 +81,9 @@ required.
 | 2 — Intent agent | ✅ Done — LangGraph agent: intent + language classification → search / compare / clarify / route / decline, durable multi-turn clarify→resume, `/assist` |
 | 3 — Cloud deployment | ✅ Done — multi-stage image, Terraform for GCP (Cloud Run) and AWS (ECS Fargate), each with managed Postgres/pgvector + secrets; load-test + cost-per-1000 report (`make perf`) |
 
-`/search` is a retrieval primitive: it does not parse intent from the query (it won't read "cheap" from
-*günstige*). Intent classification and the clarifying-question branch live in the **intent agent** (Task 2,
-`/assist`), which calls `/search` — so retrieval is exercised and tested on its own.
+`/search` is the mechanical retrieval primitive; reading a query's *intent* — price sensitivity,
+comparison, vagueness — is the agent's job at `/assist`. That split is deliberate: retrieval is tested
+and tuned on its own, and the agent composes it.
 
 ---
 
@@ -111,34 +119,40 @@ canonical `Product`. Normalization runs once, at load time — not per request:
 Fields that can be compared (price, size) or filtered (tags, partner) become typed columns; everything
 descriptive goes into a `description` that is embedded.
 
-<details>
-<summary><b>Ingestion pipeline diagram</b> — disparate feeds → one canonical <code>products</code> table</summary>
+**Ingestion pipeline** — disparate feeds → one canonical `products` table:
 
 ```text
- PARTNER FEEDS (disparate)                     INGESTION (make seed + make embed)
- ┌─────────────────────────────────┐
- │ dm.json                         │           ┌───────────────────────────────────────────┐
- │   title · marke · price_eur     │──┐        │  Partner adapter  (ABC + 1 impl per partner)│
- │   pack_size · dm_gtin · labels  │  │        │   Babel  → price_cents   ("12,30" → 1230)   │
- ├─────────────────────────────────┤  │        │   Pint   → weight_g / volume_ml  ("1,5 l" → │
- │ edeka.json                      │  ├──────▶ │            1500 ml)                          │
- │   name · hersteller · "12,30"   │  │        │   labels → tags[]  (curated dietary set)    │
- │   weight "1,5 l" · ean · labels │  │        │   compose_description → embed text          │
- ├─────────────────────────────────┤  │        └───────────────────────┬─────────────────────┘
- │ amazon.json                     │  │                                 │ canonical Product
- │   product_name · brand · price  │──┘                                 ▼
- │   asin · rating · blurb (no size)│          ┌───────────────────────────────────────────────┐
- └─────────────────────────────────┘          │      PostgreSQL + pgvector  (products table)     │
-                                               │  ┌────────────────────────────┬───────────────┐ │
-   make embed ───────────────────────────────▶│  │ embedding VECTOR(N)          │ HNSW (cosine) │─┼─▶ semantic arm
-   (Embedder → N-d vector + provenance)        │  │ search_tsv (German tsvector)│ GIN           │─┼─▶ keyword arm
-                                               │  │ tags TEXT[]                 │ GIN           │─┼─▶ require_tags filter
-                                               │  │ weight_g · volume_ml · price│ (typed cols)  │─┼─▶ price-per-unit sort
-                                               │  └────────────────────────────┴───────────────┘ │
-                                               └───────────────────────────────────────────────────┘
+  PARTNER FEEDS (disparate raw shapes)
+  ┌───────────────────────────────────────────┐
+  │ dm.json    title · marke · price_eur      │
+  │            pack_size · dm_gtin · labels   │
+  ├───────────────────────────────────────────┤
+  │ edeka.json name · hersteller · "12,30"    │
+  │            weight "1,5 l" · ean · labels  │
+  ├───────────────────────────────────────────┤
+  │ amazon.json product_name · brand · price  │
+  │            asin · rating · blurb (no size)│
+  └─────────────────────┬─────────────────────┘
+                        ▼
+  INGESTION  (make seed + make embed)
+  ┌───────────────────────────────────────────┐
+  │ Partner adapter (ABC + 1 impl per partner)│
+  │  Babel  → price_cents      "12,30" → 1230 │
+  │  Pint   → weight_g/volume_ml "1,5 l"→1500 │
+  │  labels → tags[]           (dietary set)  │
+  │  compose_description → embed text         │
+  │  make embed: Embedder → vector + model id │
+  └─────────────────────┬─────────────────────┘
+                        ▼ canonical Product
+  ┌───────────────────────────────────────────┐
+  │ PostgreSQL + pgvector  (products table)   │
+  ├───────────────────────────┬───────────────┤
+  │ embedding VECTOR(N)       │ HNSW (cosine) │──▶ semantic arm
+  │ search_tsv (German tsv)   │ GIN           │──▶ keyword arm
+  │ tags TEXT[]               │ GIN           │──▶ require_tags filter
+  │ weight_g·volume_ml·price  │ typed cols    │──▶ price-per-unit sort
+  └───────────────────────────┴───────────────┘
 ```
-
-</details>
 
 One `products` table backs everything: an HNSW index for semantic search, a GIN index on a German
 `tsvector` for keyword search, and GIN indexes on `tags` and `attrs`. Schema and embedding details are in
@@ -166,17 +180,16 @@ The two ranked lists are merged with **Reciprocal Rank Fusion** (k=60; Cormack e
 incomparable scales and rewards products both arms return. With no user history, the query alone drives
 the result.
 
-<details>
-<summary><b>Query-path diagram</b> — embed → two arms → fuse → filter → rank</summary>
+**Query path** — embed → two arms → fuse → filter → rank:
 
 ```text
   GET /search?q=günstige Windeln & sort=price_low  (+ optional partner / require_tags)
                                  │
                        embed_query (sync, L2-normalized)
                                  │
-            ┌────────────────────┴─────────────────────┐
+            ┌────────────────────┴───────────────────────┐
             ▼                                            ▼
-  ┌───────────────────────┐                  ┌───────────────────────────┐
+  ┌───────────────────────┐                   ┌────────────────────────────┐
   │  SEMANTIC ARM          │                  │  KEYWORD ARM               │
   │  cosine_distance       │                  │  websearch_to_tsquery(de)  │
   │  over HNSW → top k     │                  │  @@ search_tsv · ts_rank   │
@@ -186,22 +199,22 @@ the result.
   │  absolute ceiling 0.60 │                  │  ts_rank ≥ min_rank floor  │
   │  (pre-fusion noise cut)│                  │                            │
   └───────────┬────────────┘                  └─────────────┬──────────────┘
-              │  ranked id list                            │  ranked id list
-              └──────────────────┬─────────────────────────┘
+              │  ranked id list                             │  ranked id list
+              └──────────────────┬──────────────────────────┘
                                  ▼
-              ┌──────────────────────────────────────────┐
+              ┌────────────────────────────────────────────┐
               │  RECIPROCAL RANK FUSION                    │
               │  score(d) = Σ 1 / (k + rank),  k = 60      │
-              └──────────────────┬───────────────────────┘
+              └──────────────────┬─────────────────────────┘
                                  ▼
                  load fused products (eager-load partner + brand)
                                  │
                                  ▼
-              ┌──────────────────────────────────────────┐
+              ┌────────────────────────────────────────────┐
               │  RANKER  (pluggable · owns final order)    │
               │  constrained → relevance, then per-partner │   ← RANKING_STRATEGY
               │   cap, then back-fill  (default)           │     also: mmr · zscore
-              └──────────────────┬───────────────────────┘
+              └──────────────────┬─────────────────────────┘
                                  ▼
                         sort == price_low ?
                         │ yes               │ no
@@ -214,8 +227,6 @@ the result.
               list[ProductOut]  ·  id · partner · name · brand
                                    price_cents · currency · tags · score
 ```
-
-</details>
 
 Two stages decide quality, both selectable by config:
 
