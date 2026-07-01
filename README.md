@@ -81,6 +81,14 @@ required.
 
 ## Data model & ingestion
 
+**Where the data comes from.** The dm and EDEKA catalogs are real products pulled from the
+[Open Food Facts](https://world.openfoodfacts.org) public API (open data, ODbL) via
+[`fetch_off.py`](apps/backend/data/fetch_off.py) — real names, brands, categories, dietary labels, and
+image URLs. Open Food Facts carries no retail prices, so prices are synthesized deterministically. The
+Amazon catalog is a small synthetic merchandise set (electronics and household goods — hence no dietary
+tags), included so the assistant spans food and non-food. All three snapshots are committed, so `make
+seed` and `make demo` run offline and reproducibly.
+
 The three feeds share no schema — different field names, price formats, units, and metadata:
 
 | | dm | EDEKA | Amazon |
