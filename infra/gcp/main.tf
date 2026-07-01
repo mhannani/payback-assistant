@@ -240,6 +240,15 @@ resource "google_cloud_run_v2_service" "api" {
         name  = "RETRIEVER_BACKEND"
         value = "bigquery"
       }
+      # The default absolute-distance filter ceiling is calibrated for OpenAI embeddings (see
+      # config.py); Vertex text-multilingual-embedding-002 has a different cosine-distance scale, so
+      # that fixed ceiling lets noise through here (e.g. "Nudeln" surfacing muesli). autocut is
+      # parameter-free — it cuts at the signal/noise gap regardless of the model's absolute scale —
+      # so the Vertex path needs no per-model re-tuning.
+      env {
+        name  = "FILTER_STRATEGY"
+        value = "autocut"
+      }
       env {
         name  = "BIGQUERY_DATASET"
         value = google_bigquery_dataset.vectors.dataset_id
