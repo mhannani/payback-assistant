@@ -17,6 +17,10 @@ export interface ProductOut {
   currency: string;
   image_url: string | null;
   tags: string[];
+  // Comparative price normalized to a 100-unit base (the metric "cheapest" really means). null when
+  // the product has no parseable size. unit_basis names the base so it's not read as a shelf price.
+  unit_price_cents: number | null;
+  unit_basis: "per_100g" | "per_100ml" | null;
 }
 
 interface AssistBase {
@@ -27,7 +31,13 @@ interface AssistBase {
 }
 
 export type AssistResponse =
-  | (AssistBase & { type: "products"; items: ProductOut[] })
+  | (AssistBase & { type: "products"; items: ProductOut[]; message: string | null })
+  | (AssistBase & {
+      type: "compare";
+      items: ProductOut[];
+      cheapest_pick: ProductOut | null;
+      message: string | null;
+    })
   | (AssistBase & { type: "clarify"; question: string; thread_id: string })
   | (AssistBase & {
       type: "route";
@@ -36,6 +46,12 @@ export type AssistResponse =
       search_query: string;
       deeplink: string;
       message: string;
+    })
+  | (AssistBase & {
+      type: "decline";
+      message: string;
+      partner: PartnerSlug | null;
+      partner_name: string | null;
     });
 
 // ── The widget's flat message model (what the conversation UI renders) ──────
@@ -44,5 +60,14 @@ export type Msg =
   | { id: string; role: "user"; text: string }
   | { id: string; role: "assistant"; kind: "text"; text: string }
   | { id: string; role: "assistant"; kind: "products"; items: ProductOut[] }
+  | {
+      id: string;
+      role: "assistant";
+      kind: "compare";
+      items: ProductOut[];
+      cheapestId: string | null;
+      message: string | null;
+    }
   | { id: string; role: "assistant"; kind: "clarify"; question: string }
-  | { id: string; role: "assistant"; kind: "route"; message: string; deeplink: string; partnerName: string };
+  | { id: string; role: "assistant"; kind: "route"; message: string; deeplink: string; partnerName: string }
+  | { id: string; role: "assistant"; kind: "decline"; message: string };
