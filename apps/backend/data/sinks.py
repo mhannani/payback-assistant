@@ -57,7 +57,7 @@ class BigQueryEmbeddingSink(EmbeddingSink):
     def __init__(self, settings: Settings) -> None:
         self._dataset = settings.bigquery_dataset
         self._table = settings.bigquery_table
-        self._project = settings.vertex_project
+        self._project = settings.vertexai_project
         self._client = None
 
     def _bq(self):

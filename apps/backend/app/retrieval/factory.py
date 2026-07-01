@@ -37,9 +37,9 @@ def _vector_index(s: Settings, embedder: Embedder) -> VectorIndex:
         case "bigquery":
             # Fail fast if the GCP prerequisite is unset, the way the embedder factory validates
             # before serving rather than 500-ing on first query.
-            if not s.vertex_project:
+            if not s.vertexai_project:
                 raise ValueError(
-                    "retriever_backend=bigquery requires VERTEX_PROJECT (the GCP project) to be set."
+                    "retriever_backend=bigquery requires VERTEXAI_PROJECT (the GCP project) to be set."
                 )
             return BigQueryVectorIndex(s, embedder)
         case other:

@@ -20,8 +20,8 @@ def init_bq() -> None:
     from google.cloud import bigquery
 
     s = get_settings()
-    client = bigquery.Client(project=s.vertex_project)
-    dataset = f"{s.vertex_project}.{s.bigquery_dataset}"
+    client = bigquery.Client(project=s.vertexai_project)
+    dataset = f"{s.vertexai_project}.{s.bigquery_dataset}"
     table = f"{dataset}.{s.bigquery_table}"
     dim = s.embedding_dim
 

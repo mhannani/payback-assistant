@@ -30,9 +30,11 @@ class Settings(BaseSettings):
     # Which managed provider serves vectors: 'openai' (default) or 'vertex'. Embedding is a
     # cloud call, so a key/credentials are required (no offline model).
     embedding_provider: str = "openai"
-    # Provider settings — only read by the matching provider.
-    vertex_project: str | None = None
-    vertex_location: str = "europe-west3"
+    # Vertex project/region (env: VERTEXAI_PROJECT / VERTEXAI_LOCATION). Named to match LiteLLM's own
+    # env vars for vertex_ai/* models, so ONE pair configures both our embedder's Vertex SDK AND the
+    # agent's LLM through LiteLLM — no duplicate VERTEX_* vs VERTEXAI_* env vars.
+    vertexai_project: str | None = None
+    vertexai_location: str = "europe-west3"
     vertex_model: str = "text-multilingual-embedding-002"
     openai_api_key: str | None = None
     openai_model: str = "text-embedding-3-small"

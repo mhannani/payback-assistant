@@ -217,13 +217,16 @@ resource "google_cloud_run_v2_service" "api" {
         name  = "EMBEDDING_PROVIDER"
         value = "vertex"
       }
-      # Vertex and BigQuery need the GCP project + location explicitly; ADC doesn't expose them at runtime.
+      # Vertex needs the GCP project + location explicitly (ADC doesn't expose them at runtime). One
+      # pair serves both the embedder's Vertex SDK and the agent's LLM via LiteLLM — VERTEXAI_* is
+      # LiteLLM's own name and the app reads the same (see config.py). Without it a vertex_ai/* LLM
+      # call fails with "VERTEXAI_PROJECT not set".
       env {
-        name  = "VERTEX_PROJECT"
+        name  = "VERTEXAI_PROJECT"
         value = var.project_id
       }
       env {
-        name  = "VERTEX_LOCATION"
+        name  = "VERTEXAI_LOCATION"
         value = var.region
       }
       env {
@@ -327,13 +330,14 @@ resource "google_cloud_run_v2_job" "seed" {
           name  = "EMBEDDING_PROVIDER"
           value = "vertex"
         }
-        # Vertex and BigQuery need the GCP project + location explicitly; ADC doesn't expose them at runtime.
+        # The seed's embed step calls Vertex; it needs the project + location explicitly. VERTEXAI_*
+        # is the single pair the app reads for both the embedder and (if used) the LLM (see config.py).
         env {
-          name  = "VERTEX_PROJECT"
+          name  = "VERTEXAI_PROJECT"
           value = var.project_id
         }
         env {
-          name  = "VERTEX_LOCATION"
+          name  = "VERTEXAI_LOCATION"
           value = var.region
         }
         env {
