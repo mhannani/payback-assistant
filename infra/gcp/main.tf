@@ -227,7 +227,7 @@ resource "google_cloud_run_v2_service" "api" {
       }
       env {
         name  = "VERTEXAI_LOCATION"
-        value = var.region
+        value = var.vertexai_location
       }
       env {
         name  = "LLM_MODEL"
@@ -338,7 +338,7 @@ resource "google_cloud_run_v2_job" "seed" {
         }
         env {
           name  = "VERTEXAI_LOCATION"
-          value = var.region
+          value = var.vertexai_location
         }
         env {
           name  = "LLM_MODEL"

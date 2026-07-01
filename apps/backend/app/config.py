@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     # The agent classifies a query through an LLM reached via a LiteLLM gateway.
     # `llm_model` is a LiteLLM model id; LiteLLM reads the matching provider
     # credentials from the environment (OPENAI_API_KEY here). Switching to
-    # 'vertex_ai/gemini-2.0-flash', 'anthropic/claude-...', etc. is a one-line change.
+    # 'vertex_ai/gemini-2.5-flash', 'anthropic/claude-...', etc. is a one-line change.
     llm_model: str = "openai/gpt-4o-mini"
     llm_temperature: float = 0.0  # classification is deterministic, not creative
 
