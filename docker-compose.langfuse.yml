@@ -153,6 +153,11 @@ services:
       - "127.0.0.1:3003:3000" # local admin access; public access goes through Traefik
     environment:
       <<: *langfuse-shared-env
+      # Next.js standalone binds to $HOSTNAME (the container id → ONE network interface). This
+      # container sits on TWO networks (internal + traefik), and the hostname resolves to the
+      # internal IP — leaving the Traefik-side IP unbound and the dashboard unreachable. Bind all
+      # interfaces explicitly.
+      HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: ${LANGFUSE_PUBLIC_URL:-http://localhost:3003}
       NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-langfuse-dev-secret-change-in-production}
       # Auto-provision the org/project/user so the instance works with no signup step. The
@@ -168,7 +173,9 @@ services:
       LANGFUSE_INIT_USER_NAME: Admin
       LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_ADMIN_PASSWORD:-admin1234}
     healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:3000/api/public/health || exit 1
+      # 127.0.0.1, not localhost: busybox wget resolves localhost to ::1 first, and Next listens
+      # on IPv4 only — the name would fail the probe even while the app serves fine.
+      test: wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/public/health || exit 1
       interval: 10s
       timeout: 5s
       retries: 5
