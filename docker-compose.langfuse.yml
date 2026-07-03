@@ -1,0 +1,201 @@
+# Langfuse v3 — self-hosted LLM observability (showcase branch)
+# ==============================================================
+#
+# Traces every agent turn at the LiteLLM layer (model, tokens, latency, prompt/response) —
+# wired in app/llm/tracing.py via LiteLLM's ``langfuse_otel`` callback, gated on LANGFUSE_ENABLED.
+#
+# A separate compose file on purpose: Langfuse's lifecycle is independent of the app's — an app
+# redeploy never restarts the tracing stack, and the stack is optional (the API runs fine without
+# it). Same pattern as the app's prod compose: no own Traefik, it joins the shared external
+# `traefik` network and exposes the dashboard via labels:
+#
+#   langfuse.payback.mhannani.me → the Langfuse UI (DNS A record → the EC2 IP, like the other hosts)
+#
+# Usage (server):  docker compose --env-file .env.prod -f docker-compose.langfuse.yml up -d
+# Usage (local):   docker network create traefik   # once, if absent
+#                  docker compose -f docker-compose.langfuse.yml up -d   # UI on localhost:3003
+#
+# Auto-provisioned org/project/user (LANGFUSE_INIT_*), so no signup step: the API keys are known
+# up front and the same .env file feeds both this stack and the API's tracing env. Real secrets
+# (admin password, salt, encryption key) come from .env.prod; the inline defaults are dev-only.
+#
+# NOTE: service names use hyphens (not underscores) because they double as Docker DNS hostnames —
+# underscores break the AWS SDK's S3 hostname validation against MinIO.
+
+services:
+  # ── PostgreSQL (dedicated — Prisma migrations refuse a non-empty shared schema) ──
+  langfuse-postgres:
+    image: postgres:17-alpine
+    container_name: payback_langfuse_postgres
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: ${LANGFUSE_DB_PASSWORD:-langfuse_dev}
+      POSTGRES_DB: langfuse
+    volumes:
+      - langfuse_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - langfuse_internal
+    restart: unless-stopped
+
+  # ── Redis (queue + cache; Langfuse requires the noeviction policy) ──
+  langfuse-redis:
+    image: redis:7-alpine
+    container_name: payback_langfuse_redis
+    command: >
+      redis-server
+      --requirepass ${LANGFUSE_REDIS_PASSWORD:-langfuse_redis_dev}
+      --maxmemory-policy noeviction
+    volumes:
+      - langfuse_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${LANGFUSE_REDIS_PASSWORD:-langfuse_redis_dev}", "ping"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+    networks:
+      - langfuse_internal
+    restart: unless-stopped
+
+  # ── ClickHouse (OLAP store for traces / observations / scores) ──
+  langfuse-clickhouse:
+    image: clickhouse/clickhouse-server
+    container_name: payback_langfuse_clickhouse
+    user: "101:101"
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-clickhouse_dev}
+    volumes:
+      - langfuse_clickhouse_data:/var/lib/clickhouse
+      - langfuse_clickhouse_logs:/var/log/clickhouse-server
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 1s
+    networks:
+      - langfuse_internal
+    restart: unless-stopped
+
+  # ── MinIO (S3-compatible blob store for raw events; internal-only, no media uploads here) ──
+  langfuse-minio:
+    image: cgr.dev/chainguard/minio
+    container_name: payback_langfuse_minio
+    entrypoint: sh
+    command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" /data'
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: ${LANGFUSE_MINIO_PASSWORD:-minio_dev_secret}
+    volumes:
+      - langfuse_minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
+    networks:
+      - langfuse_internal
+    restart: unless-stopped
+
+  # ── Worker (async ingestion: S3/Redis → ClickHouse) ──
+  langfuse-worker:
+    image: langfuse/langfuse-worker:3
+    container_name: payback_langfuse_worker
+    depends_on: &langfuse-depends-on
+      langfuse-postgres:
+        condition: service_healthy
+      langfuse-redis:
+        condition: service_healthy
+      langfuse-clickhouse:
+        condition: service_healthy
+      langfuse-minio:
+        condition: service_healthy
+    environment: &langfuse-shared-env
+      DATABASE_URL: postgresql://langfuse:${LANGFUSE_DB_PASSWORD:-langfuse_dev}@langfuse-postgres:5432/langfuse
+      SALT: ${LANGFUSE_SALT:-6109f97191037e08cc93adaa6717032acca788a48e0460961f06e652ae37a504}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-fa4e9f5b25bc80100f336e00fcd07b225aac8d0954ed445e45ec0c5a0be85711}
+      TELEMETRY_ENABLED: "false"
+      # ClickHouse
+      CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
+      CLICKHOUSE_URL: http://langfuse-clickhouse:8123
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-clickhouse_dev}
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      # Redis
+      REDIS_HOST: langfuse-redis
+      REDIS_PORT: "6379"
+      REDIS_AUTH: ${LANGFUSE_REDIS_PASSWORD:-langfuse_redis_dev}
+      # S3 / MinIO — raw event storage
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-minio_dev_secret}
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+    networks:
+      - langfuse_internal
+    restart: unless-stopped
+
+  # ── Web (UI + ingest API — the dashboard the demo links to) ──
+  langfuse:
+    image: langfuse/langfuse:3
+    container_name: payback_langfuse
+    depends_on: *langfuse-depends-on
+    ports:
+      - "127.0.0.1:3003:3000" # local admin access; public access goes through Traefik
+    environment:
+      <<: *langfuse-shared-env
+      NEXTAUTH_URL: ${LANGFUSE_PUBLIC_URL:-http://localhost:3003}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-langfuse-dev-secret-change-in-production}
+      # Auto-provision the org/project/user so the instance works with no signup step. The
+      # public/secret keys here are the SAME env values app/llm/tracing.py reads — one .env
+      # configures both sides, so they can't drift.
+      LANGFUSE_INIT_ORG_ID: payback-org
+      LANGFUSE_INIT_ORG_NAME: PAYBACK Assistant
+      LANGFUSE_INIT_PROJECT_ID: payback-assistant
+      LANGFUSE_INIT_PROJECT_NAME: PAYBACK Assistant
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-dev-payback}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-dev-payback}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_ADMIN_EMAIL:-admin@payback.local}
+      LANGFUSE_INIT_USER_NAME: Admin
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_ADMIN_PASSWORD:-admin1234}
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:3000/api/public/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - langfuse_internal
+      - traefik
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.payback-langfuse.rule=Host(`langfuse.payback.mhannani.me`)"
+      - "traefik.http.routers.payback-langfuse.entrypoints=websecure"
+      - "traefik.http.routers.payback-langfuse.tls.certresolver=letsencrypt"
+      - "traefik.http.services.payback-langfuse.loadbalancer.server.port=3000"
+
+networks:
+  langfuse_internal:
+    driver: bridge
+  # The shared reverse-proxy network (created once per host: `docker network create traefik`).
+  # The API (payback_api_prod) is on it too, so it reaches the ingest endpoint in-network as
+  # http://payback_langfuse:3000 — traces never leave the box.
+  traefik:
+    external: true
+
+volumes:
+  langfuse_postgres_data:
+  langfuse_clickhouse_data:
+  langfuse_clickhouse_logs:
+  langfuse_redis_data:
+  langfuse_minio_data:

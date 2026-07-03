@@ -69,6 +69,7 @@ returns German products from two different partners:
 - [Tech stack](#tech-stack)
 - [Testing](#testing)
 - [Deployment](#deployment)
+- [Observability (this branch)](#observability-this-branch)
 - [Limitations](#limitations)
 
 ---
@@ -585,6 +586,21 @@ the known next steps are:
 
 The in-app input-length cap (oversized bodies are rejected before any model call) is the one
 first-line guard that already exists.
+
+---
+
+## Observability (this branch)
+
+Every agent LLM call is traced into a **self-hosted Langfuse v3** — model, tokens, latency, prompt
+and structured response — via LiteLLM's `langfuse_otel` callback
+([`app/llm/tracing.py`](apps/backend/app/llm/tracing.py)), registered once at the gateway so no call
+site is instrumented. Off by default: without `LANGFUSE_ENABLED` the callback is never registered.
+
+The instance is [`docker-compose.langfuse.yml`](docker-compose.langfuse.yml) (web + worker +
+dedicated Postgres/ClickHouse/Redis/MinIO), auto-provisioned org/project/keys, dashboard behind the
+shared Traefik at `langfuse.payback.mhannani.me`. Traces stay on-box — the API posts in-network over
+the shared Docker network. Telemetry can never fail a turn: the wiring is try/except-gated, so a
+Langfuse outage degrades to "no traces".
 
 ---
 

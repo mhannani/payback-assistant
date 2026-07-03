@@ -17,12 +17,24 @@ export default function Home() {
           Partner-Kataloge auf einmal und empfiehlt die beste Wahl.
         </p>
 
-        <Link
-          href="/products"
-          className="mt-8 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
-        >
-          Alle Produkte ansehen
-        </Link>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/products"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+          >
+            Alle Produkte ansehen
+          </Link>
+          {/* Self-hosted Langfuse dashboard — every Assistent-Antwort ist dort als Trace sichtbar.
+              Hardcoded wie die übrigen Demo-URLs (Single-Tenant-Demo, vgl. widget.js). */}
+          <a
+            href="https://langfuse.payback.mhannani.me"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            Live-Traces ansehen
+          </a>
+        </div>
 
         <p className="mt-10 text-sm text-muted-foreground">
           Tippen Sie auf die Chat-Blase, um zu starten →

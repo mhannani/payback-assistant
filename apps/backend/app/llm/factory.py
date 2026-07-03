@@ -33,4 +33,9 @@ def get_chat_model(settings: Settings | None = None) -> Any:
     from langchain_litellm import ChatLiteLLM
 
     litellm.drop_params = True
+    # Register Langfuse tracing (if configured) before the first model is built, so every call
+    # through this gateway is traced from turn one. A no-op when LANGFUSE_ENABLED is unset.
+    from app.llm.tracing import init_langfuse
+
+    init_langfuse(s)
     return ChatLiteLLM(model=s.llm_model, temperature=s.llm_temperature)

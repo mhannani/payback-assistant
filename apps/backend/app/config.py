@@ -69,6 +69,19 @@ class Settings(BaseSettings):
     llm_model: str = "openai/gpt-4o-mini"
     llm_temperature: float = 0.0  # classification is deterministic, not creative
 
+    # ── Observability (Langfuse v3, self-hosted — showcase) ─────────
+    # Traces every agent LLM call at the LiteLLM layer (model, tokens, latency, prompt/response)
+    # via LiteLLM's ``langfuse_otel`` callback — see app/llm/tracing.py. Off by default and fully
+    # optional: with LANGFUSE_ENABLED unset the callback is never registered and the OTEL deps are
+    # never exercised. The keys match the LANGFUSE_INIT_* values the self-hosted stack provisions
+    # (docker-compose.langfuse.yml), so one env file configures both sides.
+    langfuse_enabled: bool = False
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
+    # Base URL of the Langfuse web service; LiteLLM appends /api/public/otel. In prod the API and
+    # Langfuse share the traefik network, so traces stay on-box (http://payback_langfuse:3000).
+    langfuse_otel_host: str | None = None
+
     # ── Web widget (showcase) ───────────────────────────────────────
     # Browser origins allowed to call the API. The embeddable widget is served from a different
     # origin than the API (payback.mhannani.me → api.payback.mhannani.me in prod; :3000 → :8000 in

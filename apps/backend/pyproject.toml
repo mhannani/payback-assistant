@@ -35,6 +35,13 @@ dependencies = [
     # retriever lazy-imports it, but depending on it explicitly (not transitively via aiplatform)
     # keeps the import safe if that chain ever changes.
     "google-cloud-bigquery>=3.42,<4",
+    # Langfuse v3 tracing via LiteLLM's ``langfuse_otel`` callback. Langfuse v3 ingests
+    # OpenTelemetry spans (the v2-only ``success_callback=["langfuse"]`` path doesn't apply), so we
+    # ship the OTEL SDK + OTLP exporter rather than the ``langfuse`` package. Wiring lives in
+    # app/llm/tracing.py, gated on LANGFUSE_ENABLED — with tracing off, none of this is exercised.
+    "opentelemetry-api>=1.20",
+    "opentelemetry-sdk>=1.20",
+    "opentelemetry-exporter-otlp>=1.20",
 ]
 
 [dependency-groups]
