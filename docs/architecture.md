@@ -134,7 +134,7 @@ to its score scale, fused by RRF, then a pluggable fair ranker.
   │         │              │                  │  (German stemming)         │
   │         ▼              │                  │         │                  │
   │  CandidateFilter       │                  │         ▼                  │
-  │  absolute ceiling 0.50 │                  │  ts_rank ≥ min_rank floor  │
+  │  absolute ceiling 0.60 │                  │  ts_rank ≥ min_rank floor  │
   │  (pre-fusion noise cut)│                  │                            │
   └───────────┬────────────┘                  └─────────────┬──────────────┘
               │  ranked id list                            │  ranked id list

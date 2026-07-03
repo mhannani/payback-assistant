@@ -57,7 +57,7 @@ class BigQueryEmbeddingSink(EmbeddingSink):
     def __init__(self, settings: Settings) -> None:
         self._dataset = settings.bigquery_dataset
         self._table = settings.bigquery_table
-        self._project = settings.vertex_project
+        self._project = settings.vertexai_project
         self._client = None
 
     def _bq(self):
@@ -104,16 +104,29 @@ class BigQueryEmbeddingSink(EmbeddingSink):
         ).result()
         self._ensure_vector_index(client, target)
 
-    def _ensure_vector_index(self, client, target: str) -> None:
-        """Build the ANN vector index — AFTER vectors are written, never before.
+    # BigQuery refuses an IVF vector index below this many rows ("Total rows N is smaller than min
+    # allowed 5000 … Please use VECTOR_SEARCH … directly"). Below it, VECTOR_SEARCH does an exact
+    # brute-force scan with no index — which is correct (and fast) at demo scale. The index is a
+    # scale-path optimization (ADR 0003), so we build it only once the catalog is large enough.
+    _BQ_VECTOR_INDEX_MIN_ROWS = 5000
 
-        BigQuery derives the index's vector dimension by reading the column's arrays, so a
-        ``CREATE VECTOR INDEX`` on an all-NULL ``embedding`` column fails ("Failed to calculate
-        array_min_len … all NULLs"). The table is empty at init time, so the index can only be built
-        once embeddings land — which is here, right after the MERGE. IVF + cosine is the warehouse
-        ANN index ``VECTOR_SEARCH`` uses (the BigQuery counterpart of pgvector's HNSW); ``IF NOT
-        EXISTS`` keeps the re-run idempotent.
+    def _ensure_vector_index(self, client, target: str) -> None:
+        """Build the ANN vector index — AFTER vectors are written, and only above BigQuery's minimum.
+
+        Two BigQuery constraints shape this: (1) the index reads the column's arrays to derive the
+        vector dimension, so it can't be built on an all-NULL column — hence it lives here, after the
+        MERGE, not in init_bq on an empty table; (2) an IVF index requires ≥ 5000 rows, so on a small
+        catalog we skip it and let VECTOR_SEARCH run brute-force (the retriever never references the
+        index by name, so nothing else changes). IVF + cosine is the warehouse ANN index at scale —
+        the BigQuery counterpart of pgvector's HNSW. ``IF NOT EXISTS`` keeps the re-run idempotent.
         """
+        rows = next(iter(client.query(f"SELECT COUNT(*) AS n FROM `{target}`").result())).n
+        if rows < self._BQ_VECTOR_INDEX_MIN_ROWS:
+            print(
+                f"BigQuery vector index skipped: {rows} rows < {self._BQ_VECTOR_INDEX_MIN_ROWS} "
+                "(IVF minimum). VECTOR_SEARCH runs brute-force at this scale — no index needed."
+            )
+            return
         client.query(
             f"""
             CREATE VECTOR INDEX IF NOT EXISTS payback_products_idx

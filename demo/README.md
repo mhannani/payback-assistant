@@ -1,8 +1,9 @@
 # Demo
 
-A small client that drives the assistant with five queries — one per intent × language — and
-prints the structured JSON it returns. It's a plain HTTP caller of `/assist` (and `/assist/resume`
-for the clarifying-question turn), so it shows the agent exactly as a real client would use it.
+A small client that drives the assistant with a query per intent branch across German and English,
+and prints the structured JSON it returns. It's a plain HTTP caller of `/assist` (and
+`/assist/resume` for the clarifying-question turn), so it shows the agent exactly as a real client
+would use it.
 
 ## Run
 
@@ -17,7 +18,7 @@ make demo
 To demo a deployed instance instead:
 
 ```bash
-python demo/run_demo.py --base-url https://<your-url>
+make demo BASE_URL=https://<cloud-run-url>   # or --base-url directly: python demo/run_demo.py --base-url …
 ```
 
 ## What it covers
@@ -28,6 +29,9 @@ The queries live in [`queries.json`](queries.json) (data, not code):
 |---|---|
 | `günstige Windeln` | German, specific + price intent → ranked products |
 | `pasta dinner` | English → German cross-lingual search across partners |
+| `vegane Schokolade` | German + dietary filter |
+| `vergleiche die günstigsten Nudeln` | comparison → value-ranked (price-per-unit) + a cheapest pick |
 | `zeig mir Kaffee bei edeka` | navigational → hand-off (deep-link) to the partner's own search |
 | `I want something to eat` | vague → clarifying question, then **resumed** with an answer |
-| `vegane Schokolade` | German + dietary filter |
+| `Wo ist meine Bestellung bei dm?` | customer support → hand-off to the partner's service desk |
+| `Wie ist das Wetter heute?` | off-topic → politely declined (out of scope) |

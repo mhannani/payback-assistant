@@ -77,7 +77,7 @@ class BigQueryVectorIndex(VectorIndex):
     """Semantic search via BigQuery ``VECTOR_SEARCH`` (the GCP warehouse vector store)."""
 
     def __init__(self, settings: Settings, embedder: Embedder) -> None:
-        self._project = settings.vertex_project
+        self._project = settings.vertexai_project
         self._dataset = settings.bigquery_dataset
         self._table = settings.bigquery_table
         self._embedder = embedder  # only for parity; model_id is passed per call

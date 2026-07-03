@@ -217,14 +217,17 @@ resource "google_cloud_run_v2_service" "api" {
         name  = "EMBEDDING_PROVIDER"
         value = "vertex"
       }
-      # Vertex and BigQuery need the GCP project + location explicitly; ADC doesn't expose them at runtime.
+      # Vertex needs the GCP project + location explicitly (ADC doesn't expose them at runtime). One
+      # pair serves both the embedder's Vertex SDK and the agent's LLM via LiteLLM — VERTEXAI_* is
+      # LiteLLM's own name and the app reads the same (see config.py). Without it a vertex_ai/* LLM
+      # call fails with "VERTEXAI_PROJECT not set".
       env {
-        name  = "VERTEX_PROJECT"
+        name  = "VERTEXAI_PROJECT"
         value = var.project_id
       }
       env {
-        name  = "VERTEX_LOCATION"
-        value = var.region
+        name  = "VERTEXAI_LOCATION"
+        value = var.vertexai_location
       }
       env {
         name  = "LLM_MODEL"
@@ -236,6 +239,15 @@ resource "google_cloud_run_v2_service" "api" {
       env {
         name  = "RETRIEVER_BACKEND"
         value = "bigquery"
+      }
+      # The default absolute-distance filter ceiling is calibrated for OpenAI embeddings (see
+      # config.py); Vertex text-multilingual-embedding-002 has a different cosine-distance scale, so
+      # that fixed ceiling lets noise through here (e.g. "Nudeln" surfacing muesli). autocut is
+      # parameter-free — it cuts at the signal/noise gap regardless of the model's absolute scale —
+      # so the Vertex path needs no per-model re-tuning.
+      env {
+        name  = "FILTER_STRATEGY"
+        value = "autocut"
       }
       env {
         name  = "BIGQUERY_DATASET"
@@ -327,14 +339,15 @@ resource "google_cloud_run_v2_job" "seed" {
           name  = "EMBEDDING_PROVIDER"
           value = "vertex"
         }
-        # Vertex and BigQuery need the GCP project + location explicitly; ADC doesn't expose them at runtime.
+        # The seed's embed step calls Vertex; it needs the project + location explicitly. VERTEXAI_*
+        # is the single pair the app reads for both the embedder and (if used) the LLM (see config.py).
         env {
-          name  = "VERTEX_PROJECT"
+          name  = "VERTEXAI_PROJECT"
           value = var.project_id
         }
         env {
-          name  = "VERTEX_LOCATION"
-          value = var.region
+          name  = "VERTEXAI_LOCATION"
+          value = var.vertexai_location
         }
         env {
           name  = "LLM_MODEL"

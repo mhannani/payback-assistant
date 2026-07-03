@@ -24,7 +24,15 @@ variable "db_tier" {
 variable "llm_model" {
   description = "LiteLLM model id for the agent. Defaults to Vertex Gemini for an all-GCP path."
   type        = string
-  default     = "vertex_ai/gemini-2.0-flash"
+  # gemini-2.5-flash: the current Flash model on Vertex. Older ids (2.0-flash, 1.5-flash) return 404
+  # — they're retired/unavailable to new projects. Pair with vertexai_location that serves it.
+  default = "vertex_ai/gemini-2.5-flash"
+}
+
+variable "vertexai_location" {
+  description = "Vertex AI region for the LLM + embedder (VERTEXAI_LOCATION). Separate from `region` (Cloud SQL/BigQuery) because Gemini isn't served in every region — gemini-2.5-flash 404s in europe-west3 but works in us-central1, which also serves the embedding model. The data (catalog rows, vectors) stays in `region`; only Vertex inference runs here."
+  type        = string
+  default     = "us-central1"
 }
 
 variable "llm_api_key" {

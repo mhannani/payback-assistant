@@ -16,6 +16,6 @@ def test_pgvector_backend_selects_postgres_sink() -> None:
 def test_bigquery_backend_selects_bigquery_sink() -> None:
     # Constructed but the BQ client is lazy, so no GCP call happens here.
     sink = get_embedding_sink(
-        MagicMock(), Settings(retriever_backend="bigquery", vertex_project="proj")
+        MagicMock(), Settings(retriever_backend="bigquery", vertexai_project="proj")
     )
     assert isinstance(sink, BigQueryEmbeddingSink)

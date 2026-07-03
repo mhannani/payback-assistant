@@ -23,7 +23,7 @@ class _FakeEmbedder:
 
 def _index(returned_ids: list[uuid.UUID]) -> tuple[BigQueryVectorIndex, MagicMock]:
     idx = BigQueryVectorIndex(
-        Settings(vertex_project="proj", bigquery_dataset="payback_vectors", bigquery_table="products"),
+        Settings(vertexai_project="proj", bigquery_dataset="payback_vectors", bigquery_table="products"),
         _FakeEmbedder(),
     )
     fake_client = MagicMock()

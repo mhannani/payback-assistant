@@ -15,7 +15,7 @@ Tune the load, or run the literal 1000:
 
 ```bash
 python perf/run_perf.py -n 1000 -c 20       # the real 1000-request run
-python perf/run_perf.py --base-url https://<your-url>
+make perf BASE_URL=https://<cloud-run-url>  # or point it at a deployed instance
 ```
 
 ## What it measures
@@ -26,13 +26,11 @@ python perf/run_perf.py --base-url https://<your-url>
   client sums those real figures and scales to 1000.
 
 The query mix is reused from [`demo/queries.json`](../demo/queries.json) so the load reflects real
-intents (search, route, vague→clarify).
+intents (search, compare, route, vague→clarify, decline).
 
-## Why extrapolate cost from a small N
+## Cost extrapolation
 
 Cost per turn is ~constant (same prompt shape, similar token counts), so **cost-per-1000 scales
-linearly** from the sample — firing a literal 1000 calls costs ~30× more for the same number. The
-default run extrapolates and labels it as such; `-n 1000` measures it directly when you want that.
-
-Latency is bound by the single LLM call per turn (retrieval is sub-millisecond), so the levers for
-faster/cheaper responses are model choice, prompt size, and caching — not the application code.
+linearly** from the sample; the default run extrapolates and labels it as such, and `-n 1000` measures
+it directly. Latency is bound by the single LLM call per turn (retrieval is sub-millisecond), so
+model choice, prompt size, and caching drive performance more than application code.

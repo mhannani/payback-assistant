@@ -12,7 +12,17 @@ It is built in three layers, each independently testable:
 3. **Cloud-native deployment** — one lean image, provisioned on GCP (Cloud Run) or AWS (ECS) by parallel
    Terraform modules.
 
+## Prerequisites (local)
+
+- **Docker**, **Docker Compose**, and **make** — every command runs inside the containers (no other host toolchain).
+- **An embedding/LLM key** — embeddings and the agent are managed-provider calls. Copy `.env.example` to
+  `.env.dev` and set `OPENAI_API_KEY` (or switch `EMBEDDING_PROVIDER=vertex` and use Vertex AI via ADC).
+
+Deploying to a cloud needs more (Terraform + the cloud CLI + credentials) — see
+[Deployment](#deployment) and each module's README.
+
 ```bash
+cp .env.example .env.dev                                # then set OPENAI_API_KEY
 make up && make seed && make embed                      # start · load catalogs · embed
 curl 'localhost:8000/search?q=pasta%20dinner&top_k=3'   # → German products for an English query
 ```
@@ -41,9 +51,7 @@ returns German products from two different partners:
 ]
 ```
 
-(`id`, `description`, and `image_url` are also returned; trimmed here.) Everything runs on a local
-Docker stack; embeddings and the agent are managed-provider calls, so an OpenAI (or Vertex) key is
-required.
+(`id`, `description`, and `image_url` are also returned; trimmed here.)
 
 ---
 
@@ -73,13 +81,21 @@ required.
 | 2 — Intent agent | ✅ Done — LangGraph agent: intent + language classification → search / compare / clarify / route / decline, durable multi-turn clarify→resume, `/assist` |
 | 3 — Cloud deployment | ✅ Done — multi-stage image, Terraform for GCP (Cloud Run) and AWS (ECS Fargate), each with managed Postgres/pgvector + secrets; load-test + cost-per-1000 report (`make perf`) |
 
-`/search` is a retrieval primitive: it does not parse intent from the query (it won't read "cheap" from
-*günstige*). Intent classification and the clarifying-question branch live in the **intent agent** (Task 2,
-`/assist`), which calls `/search`. Keeping that boundary explicit is what lets retrieval be tested on its own.
+`/search` is the mechanical retrieval primitive; reading a query's *intent* — price sensitivity,
+comparison, vagueness — is the agent's job at `/assist`. That split is deliberate: retrieval is tested
+and tuned on its own, and the agent composes it.
 
 ---
 
 ## Data model & ingestion
+
+**Where the data comes from.** The dm and EDEKA catalogs are real products pulled from the
+[Open Food Facts](https://world.openfoodfacts.org) public API (open data, ODbL) via
+[`fetch_off.py`](apps/backend/data/fetch_off.py) — real names, brands, categories, dietary labels, and
+image URLs. Open Food Facts carries no retail prices, so prices are synthesized deterministically. The
+Amazon catalog is a small synthetic merchandise set (electronics and household goods — hence no dietary
+tags), included so the assistant spans food and non-food. All three snapshots are committed, so `make
+seed` and `make demo` run offline and reproducibly.
 
 The three feeds share no schema — different field names, price formats, units, and metadata:
 
@@ -103,34 +119,40 @@ canonical `Product`. Normalization runs once, at load time — not per request:
 Fields that can be compared (price, size) or filtered (tags, partner) become typed columns; everything
 descriptive goes into a `description` that is embedded.
 
-<details>
-<summary><b>Ingestion pipeline diagram</b> — disparate feeds → one canonical <code>products</code> table</summary>
+**Ingestion pipeline** — disparate feeds → one canonical `products` table:
 
 ```text
- PARTNER FEEDS (disparate)                     INGESTION (make seed + make embed)
- ┌─────────────────────────────────┐
- │ dm.json                         │           ┌───────────────────────────────────────────┐
- │   title · marke · price_eur     │──┐        │  Partner adapter  (ABC + 1 impl per partner)│
- │   pack_size · dm_gtin · labels  │  │        │   Babel  → price_cents   ("12,30" → 1230)   │
- ├─────────────────────────────────┤  │        │   Pint   → weight_g / volume_ml  ("1,5 l" → │
- │ edeka.json                      │  ├──────▶ │            1500 ml)                          │
- │   name · hersteller · "12,30"   │  │        │   labels → tags[]  (curated dietary set)    │
- │   weight "1,5 l" · ean · labels │  │        │   compose_description → embed text          │
- ├─────────────────────────────────┤  │        └───────────────────────┬─────────────────────┘
- │ amazon.json                     │  │                                 │ canonical Product
- │   product_name · brand · price  │──┘                                 ▼
- │   asin · rating · blurb (no size)│          ┌───────────────────────────────────────────────┐
- └─────────────────────────────────┘          │      PostgreSQL + pgvector  (products table)     │
-                                               │  ┌────────────────────────────┬───────────────┐ │
-   make embed ───────────────────────────────▶│  │ embedding VECTOR(N)          │ HNSW (cosine) │─┼─▶ semantic arm
-   (Embedder → N-d vector + provenance)        │  │ search_tsv (German tsvector)│ GIN           │─┼─▶ keyword arm
-                                               │  │ tags TEXT[]                 │ GIN           │─┼─▶ require_tags filter
-                                               │  │ weight_g · volume_ml · price│ (typed cols)  │─┼─▶ price-per-unit sort
-                                               │  └────────────────────────────┴───────────────┘ │
-                                               └───────────────────────────────────────────────────┘
+  PARTNER FEEDS (disparate raw shapes)
+  ┌───────────────────────────────────────────┐
+  │ dm.json    title · marke · price_eur      │
+  │            pack_size · dm_gtin · labels   │
+  ├───────────────────────────────────────────┤
+  │ edeka.json name · hersteller · "12,30"    │
+  │            weight "1,5 l" · ean · labels  │
+  ├───────────────────────────────────────────┤
+  │ amazon.json product_name · brand · price  │
+  │            asin · rating · blurb (no size)│
+  └─────────────────────┬─────────────────────┘
+                        ▼
+  INGESTION  (make seed + make embed)
+  ┌───────────────────────────────────────────┐
+  │ Partner adapter (ABC + 1 impl per partner)│
+  │  Babel  → price_cents      "12,30" → 1230 │
+  │  Pint   → weight_g/volume_ml "1,5 l"→1500 │
+  │  labels → tags[]           (dietary set)  │
+  │  compose_description → embed text         │
+  │  make embed: Embedder → vector + model id │
+  └─────────────────────┬─────────────────────┘
+                        ▼ canonical Product
+  ┌───────────────────────────────────────────┐
+  │ PostgreSQL + pgvector  (products table)   │
+  ├───────────────────────────┬───────────────┤
+  │ embedding VECTOR(N)       │ HNSW (cosine) │──▶ semantic arm
+  │ search_tsv (German tsv)   │ GIN           │──▶ keyword arm
+  │ tags TEXT[]               │ GIN           │──▶ require_tags filter
+  │ weight_g·volume_ml·price  │ typed cols    │──▶ price-per-unit sort
+  └───────────────────────────┴───────────────┘
 ```
-
-</details>
 
 One `products` table backs everything: an HNSW index for semantic search, a GIN index on a German
 `tsvector` for keyword search, and GIN indexes on `tags` and `attrs`. Schema and embedding details are in
@@ -158,42 +180,41 @@ The two ranked lists are merged with **Reciprocal Rank Fusion** (k=60; Cormack e
 incomparable scales and rewards products both arms return. With no user history, the query alone drives
 the result.
 
-<details>
-<summary><b>Query-path diagram</b> — embed → two arms → fuse → filter → rank</summary>
+**Query path** — embed → two arms → fuse → filter → rank:
 
 ```text
   GET /search?q=günstige Windeln & sort=price_low  (+ optional partner / require_tags)
                                  │
                        embed_query (sync, L2-normalized)
                                  │
-            ┌────────────────────┴─────────────────────┐
+            ┌────────────────────┴───────────────────────┐
             ▼                                            ▼
-  ┌───────────────────────┐                  ┌───────────────────────────┐
+  ┌───────────────────────┐                   ┌────────────────────────────┐
   │  SEMANTIC ARM          │                  │  KEYWORD ARM               │
   │  cosine_distance       │                  │  websearch_to_tsquery(de)  │
   │  over HNSW → top k     │                  │  @@ search_tsv · ts_rank   │
   │         │              │                  │  (German stemming)         │
   │         ▼              │                  │         │                  │
   │  CandidateFilter       │                  │         ▼                  │
-  │  absolute ceiling 0.50 │                  │  ts_rank ≥ min_rank floor  │
+  │  absolute ceiling 0.60 │                  │  ts_rank ≥ min_rank floor  │
   │  (pre-fusion noise cut)│                  │                            │
   └───────────┬────────────┘                  └─────────────┬──────────────┘
-              │  ranked id list                            │  ranked id list
-              └──────────────────┬─────────────────────────┘
+              │  ranked id list                             │  ranked id list
+              └──────────────────┬──────────────────────────┘
                                  ▼
-              ┌──────────────────────────────────────────┐
+              ┌────────────────────────────────────────────┐
               │  RECIPROCAL RANK FUSION                    │
               │  score(d) = Σ 1 / (k + rank),  k = 60      │
-              └──────────────────┬───────────────────────┘
+              └──────────────────┬─────────────────────────┘
                                  ▼
                  load fused products (eager-load partner + brand)
                                  │
                                  ▼
-              ┌──────────────────────────────────────────┐
+              ┌────────────────────────────────────────────┐
               │  RANKER  (pluggable · owns final order)    │
               │  constrained → relevance, then per-partner │   ← RANKING_STRATEGY
               │   cap, then back-fill  (default)           │     also: mmr · zscore
-              └──────────────────┬───────────────────────┘
+              └──────────────────┬─────────────────────────┘
                                  ▼
                         sort == price_low ?
                         │ yes               │ no
@@ -206,8 +227,6 @@ the result.
               list[ProductOut]  ·  id · partner · name · brand
                                    price_cents · currency · tags · score
 ```
-
-</details>
 
 Two stages decide quality, both selectable by config:
 
@@ -423,26 +442,35 @@ response carries the turn's LLM cost in its `usage` block — token counts from 
 callback, priced by LiteLLM (no hand-maintained price table; see
 [`app/llm/cost.py`](apps/backend/app/llm/cost.py)) — so the client sums real figures.
 
-| Metric | Value (30 requests, concurrency 5) |
-|---|---|
-| Latency p50 / p95 / p99 | 1560 ms / 3519 ms / 3526 ms |
-| LLM cost per request | ~$0.000180 |
-| **Cost per 1000 requests** | **~$0.18** |
+Measured against both live deployments (30 requests, concurrency 5):
 
-Latency tracks the single LLM classification call, so it varies run-to-run (p50 ~1.6 s); the cost
-is near-constant.
+| Metric | AWS — `gpt-4o-mini` · pgvector | GCP — `gemini-2.5-flash` · BigQuery |
+|---|---|---|
+| Latency p50 | 1450 ms | 2476 ms |
+| Latency p95 | 1896 ms | 9847 ms |
+| Latency p99 | 2443 ms | 9992 ms |
+| **Cost per 1000 requests** | **~$0.18** | **~$0.66** |
+
+These differ by **model and vector-store architecture, not raw infrastructure**, so neither is simply
+"faster": AWS runs a smaller LLM plus an in-process pgvector index tuned for latency, while GCP runs a
+larger model plus BigQuery `VECTOR_SEARCH` — a warehouse query built for scale, with higher (and
+longer-tailed, hence the p95/p99 gap) per-query latency. Cost tracks LLM token pricing, not the cloud.
 
 ```bash
-make perf                              # quick run (a few cents)
+make perf                              # quick run against localhost (a few cents)
 python perf/run_perf.py -n 1000 -c 20  # the literal 1000-request run
+
+# Point it at a live deployment instead of localhost (the Cloud Run / ALB URL Terraform prints):
+python perf/run_perf.py --base-url https://<cloud-run-url>   # GCP  (Gemini · BigQuery)
+python perf/run_perf.py --base-url http://<alb-dns>          # AWS  (gpt-4o-mini · pgvector)
 ```
 
 Cost per turn is near-constant, so cost-per-1000 scales linearly from a small sample (the run labels
 whether it is measured or extrapolated). **Latency is dominated by the single LLM call per turn** —
-classification is one structured call; retrieval is sub-millisecond index lookups. So the levers for
-faster, cheaper responses are model choice, prompt size, and caching, not the application code. With
-`gpt-4o-mini` the prompt is ~700 input tokens (the field-described `Classification` schema) and ~40
-output, which is why cost stays a fraction of a cent.
+classification is one structured call; retrieval is sub-millisecond index lookups. The performance
+levers are therefore model choice, prompt size, and caching, not application code. With `gpt-4o-mini`
+the prompt is ~700 input tokens (the field-described `Classification` schema) and ~40 output — hence
+the fraction-of-a-cent cost.
 
 ---
 
@@ -471,7 +499,7 @@ apps/
       eval.py            A/B evaluation harness (make eval)
     tests/               unit + DB-backed + agent tests
   frontend/              optional chat UI (future)
-demo/                    5-query demo client (make demo)
+demo/                    per-intent demo client (make demo)
 perf/                    load-test client: latency + cost/1000 (make perf)
 infra/
   gcp/                   Terraform: Cloud Run + Cloud SQL/pgvector + BigQuery + AR + Secret Mgr
@@ -520,9 +548,8 @@ by a managed provider (OpenAI / Vertex), keeping the image small and cold starts
 **Container on a host.** `docker compose` or a single container on any server — the simplest path and
 how the live demo runs.
 
-The cloud-deployed endpoints are **unauthenticated by design** (Cloud Run `allUsers`, ALB open to
-`0.0.0.0/0`) so a reviewer can `curl` them directly without credentials. That is a deliberate
-demo trade-off, not production posture — see **Hardening** below.
+The cloud-deployed endpoints are **unauthenticated** (Cloud Run `allUsers`, ALB open to `0.0.0.0/0`)
+so they can be `curl`ed directly — a demo configuration, not production posture. See **Hardening** below.
 
 **Cloud-native, as Terraform.** Two parallel modules provision the same architecture on either cloud
 (both `terraform validate` clean):
@@ -564,8 +591,7 @@ first-line guard that already exists.
 ## Limitations
 
 - **A key is required.** Embeddings and the agent are managed-provider calls, so the service needs an
-  OpenAI (or Vertex) key — there is no offline fallback. This is the production-realistic choice (no
-  in-process model to serve or scale).
+  OpenAI (or Vertex) key — there is no offline fallback and no in-process model in the image.
 - **Small catalog** (~145 products). Enough to show the cross-catalog behaviour; the filter ceiling is
   calibrated on a small labelled set for the active embedding model and should be re-derived
   (`make eval`) for a larger corpus or a different provider.

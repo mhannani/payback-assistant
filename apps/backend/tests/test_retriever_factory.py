@@ -31,17 +31,17 @@ def test_factory_builds_hybrid_with_pgvector_index() -> None:
 
 
 def test_factory_builds_hybrid_with_bigquery_index() -> None:
-    settings = Settings(retriever_backend="bigquery", vertex_project="proj")
+    settings = Settings(retriever_backend="bigquery", vertexai_project="proj")
     retriever = get_retriever(embedder=_FakeEmbedder(), settings=settings)
     assert isinstance(retriever, HybridRetriever)
     assert isinstance(retriever._vector_index, BigQueryVectorIndex)  # GCP: BQ semantic + PG lexical
 
 
 def test_factory_bigquery_requires_project() -> None:
-    with pytest.raises(ValueError, match="VERTEX_PROJECT"):
+    with pytest.raises(ValueError, match="VERTEXAI_PROJECT"):
         get_retriever(
             embedder=_FakeEmbedder(),
-            settings=Settings(retriever_backend="bigquery", vertex_project=None),
+            settings=Settings(retriever_backend="bigquery", vertexai_project=None),
         )
 
 

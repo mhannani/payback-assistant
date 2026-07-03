@@ -26,7 +26,7 @@ class VertexEmbedder(Embedder):
         import vertexai
         from vertexai.language_models import TextEmbeddingModel
 
-        vertexai.init(project=settings.vertex_project, location=settings.vertex_location)
+        vertexai.init(project=settings.vertexai_project, location=settings.vertexai_location)
         self._model = TextEmbeddingModel.from_pretrained(self._model_name)
 
     @property
