@@ -4,7 +4,7 @@ Every model call the agent makes goes through LiteLLM (``ChatLiteLLM`` wraps it)
 process-level callback traces them all — model, tokens, latency, prompt and structured response —
 with no per-call-site instrumentation.
 
-We run Langfuse **v3** self-hosted (``docker-compose.langfuse.yml``), so the documented
+We run Langfuse **v3** self-hosted (``observability/docker-compose.langfuse.yml``), so the documented
 integration is the **OpenTelemetry** path, ``litellm.callbacks = ["langfuse_otel"]`` — NOT the
 v2-only ``success_callback = ["langfuse"]``. LiteLLM's exporter reads the keys + host from the
 environment and posts spans to ``{LANGFUSE_OTEL_HOST}/api/public/otel``.

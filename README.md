@@ -596,7 +596,7 @@ and structured response — via LiteLLM's `langfuse_otel` callback
 ([`app/llm/tracing.py`](apps/backend/app/llm/tracing.py)), registered once at the gateway so no call
 site is instrumented. Off by default: without `LANGFUSE_ENABLED` the callback is never registered.
 
-The instance is [`docker-compose.langfuse.yml`](docker-compose.langfuse.yml) (web + worker +
+The instance is [`observability/`](observability/) (web + worker +
 dedicated Postgres/ClickHouse/Redis/MinIO), auto-provisioned org/project/keys, dashboard behind the
 shared Traefik at `langfuse.payback.mhannani.me`. Traces stay on-box — the API posts in-network over
 the shared Docker network. Telemetry can never fail a turn: the wiring is try/except-gated, so a

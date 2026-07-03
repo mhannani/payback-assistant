@@ -74,7 +74,7 @@ class Settings(BaseSettings):
     # via LiteLLM's ``langfuse_otel`` callback — see app/llm/tracing.py. Off by default and fully
     # optional: with LANGFUSE_ENABLED unset the callback is never registered and the OTEL deps are
     # never exercised. The keys match the LANGFUSE_INIT_* values the self-hosted stack provisions
-    # (docker-compose.langfuse.yml), so one env file configures both sides.
+    # (observability/docker-compose.langfuse.yml), so one env file configures both sides.
     langfuse_enabled: bool = False
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None

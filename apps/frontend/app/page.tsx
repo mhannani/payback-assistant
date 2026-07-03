@@ -1,4 +1,6 @@
 import Link from "next/link";
+// The /ssr entry renders in Server Components (the default client entry is "use client"-only).
+import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr";
 import { PaybackLogo } from "@/components/PaybackLogo";
 
 /** Die Demo-Startseite. Die schwebende Chat-Blase (aus /widget.js, im App-Shell geladen) ist der
@@ -33,10 +35,11 @@ export default function Home() {
             className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
           >
             Live-Traces ansehen
+            <ArrowSquareOutIcon size={16} aria-hidden="true" />
           </a>
         </div>
 
-        <p className="mt-10 text-sm text-muted-foreground">
+        <p className="mt-6 text-sm text-muted-foreground">
           Tippen Sie auf die Chat-Blase, um zu starten →
         </p>
       </div>

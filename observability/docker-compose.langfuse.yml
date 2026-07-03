@@ -22,6 +22,12 @@
 # NOTE: service names use hyphens (not underscores) because they double as Docker DNS hostnames —
 # underscores break the AWS SDK's S3 hostname validation against MinIO.
 
+# Its own compose project, NOT the directory-default one. Both compose files live in this repo
+# root, so without this they'd share the project name — and the app deploy's
+# `up -d --remove-orphans` (docker-compose.prod.yml) would see these services as orphans of ITS
+# project and delete the whole tracing stack on every deploy.
+name: payback-langfuse
+
 services:
   # ── PostgreSQL (dedicated — Prisma migrations refuse a non-empty shared schema) ──
   langfuse-postgres:
