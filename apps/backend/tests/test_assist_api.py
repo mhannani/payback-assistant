@@ -123,6 +123,19 @@ async def test_support_query_hands_off_to_partner(agent_client) -> None:
     assert "0800 3335211" in body["message"]  # EDEKA's real customer-service number
 
 
+async def test_contact_a_shop_hands_off_with_its_real_contact(agent_client) -> None:
+    # "How can I reach X?" is customer_support with the partner set — NOT a generic off-topic
+    # refusal. Regression for a live widget miss: the classifier labelled it off_topic and the
+    # answer dropped the partner hand-off (with Amazon's real hotline) the runner already builds.
+    resp = await agent_client.post("/assist", json={"query": "How can I reach Amazon?"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["type"] == "decline"
+    assert body["intent"] == "customer_support"
+    assert body["partner"] == "amazon"
+    assert "0800 3638469" in body["message"]  # Amazon's real German service hotline
+
+
 @pytest.mark.parametrize("body", [{}, {"query": ""}])
 async def test_assist_rejects_invalid_body(agent_client, body) -> None:
     resp = await agent_client.post("/assist", json=body)

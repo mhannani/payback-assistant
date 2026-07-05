@@ -6,8 +6,17 @@ import { useDictation } from "@/hooks/useDictation";
 import { ConversationScreen } from "./ConversationScreen";
 import { ConsentDialog } from "./voice/ConsentDialog";
 
-// Mixed DE/EN on purpose — the assistant handles both, so the chips show it.
-const SUGGESTIONS = ["Günstige Windeln", "Organic pasta", "Shampoo für trockenes Haar", "Bluetooth headphones"];
+// Mixed DE/EN on purpose (the assistant handles both), one chip per capability: price search,
+// long-tail search, value comparison (in both languages), a dietary filter, and a support
+// hand-off (answered with the partner's real service contact).
+const SUGGESTIONS = [
+  "Günstige Windeln",
+  "Bluetooth headphones",
+  "Vergleiche die günstigsten Nudeln",
+  "Compare the cheapest shampoo",
+  "Vegane Schokolade",
+  "How can I reach Amazon?",
+];
 
 /** The widget shell — opens straight into the conversation (header + messages + composer). No home
  * screen, no tab bar, no history: PAYBACK's /assist is stateless. Owns the /assist chat state, the
